@@ -29,6 +29,7 @@ def build_pdf_report(
     end_date: date,
     campaign_name: str | None,
     gam_ads: pd.DataFrame,
+    webinar_data: pd.DataFrame | None = None,
     logo_path: Path | None = None,
     creative_assets: pd.DataFrame | None = None,
     manual_data: dict[str, dict[str, Any]] | None = None,
@@ -132,6 +133,7 @@ def build_pdf_report(
     )
 
     prepared = _prepare_frame(gam_ads)
+    webinar_frame = _prepare_webinar_frame(webinar_data)
     totals = _totals(prepared)
     campaign_summary = _campaign_summary(prepared)
     creative_summary = _creative_summary(prepared)
@@ -147,7 +149,20 @@ def build_pdf_report(
         if key in selected_elements
     ]
     if metric_keys:
+        story.append(Paragraph("Website Ad Metrics", styles["Section"]))
         story.append(_metric_table(styles, totals, metric_keys))
+    if "kpi_webinar_registrations" in selected_elements or "table_webinars" in selected_elements:
+        story.append(Paragraph("Webinars", styles["Section"]))
+    if "kpi_webinar_registrations" in selected_elements:
+        story.append(
+            _metric_table(
+                styles,
+                [("kpi_webinar_registrations", "Total registrations", f"{int(webinar_frame['Registrations'].sum()):,}")],
+                ["kpi_webinar_registrations"],
+            )
+        )
+    if "table_webinars" in selected_elements:
+        story.append(_webinar_table(webinar_frame))
     chart_keys = [
         key for key in [
             "chart_daily_delivery",
@@ -168,7 +183,6 @@ def build_pdf_report(
 
     manual_keys = [
         key for key in [
-            "manual_webinars",
             "manual_enewsletter",
             "manual_retargeting",
             "manual_custom_email",
@@ -273,6 +287,53 @@ def _summary_table(frame: pd.DataFrame, headings: list[str], max_rows: int):
 
     col_widths = [2.9 * inch, 1.15 * inch, 1.0 * inch, 0.85 * inch]
     table = Table(rows, colWidths=col_widths, repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), _color("blue")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("GRID", (0, 0), (-1, -1), 0.35, _color("gray")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, _color("pale_blue")]),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
+    return table
+
+
+def _webinar_table(frame: pd.DataFrame):
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    from reportlab.platypus import Paragraph, Table, TableStyle
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+
+    styles = getSampleStyleSheet()
+    header_style = ParagraphStyle(
+        "WebinarTableHeader",
+        parent=styles["BodyText"],
+        textColor=colors.white,
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+    )
+    rows = [[Paragraph("Webinar", header_style), Paragraph("Registrations", header_style), Paragraph("URL", header_style)]]
+    if frame.empty:
+        rows.append([Paragraph("No matched webinars.", styles["BodyText"]), "0", ""])
+    else:
+        for _, row in frame.head(20).iterrows():
+            rows.append(
+                [
+                    Paragraph(str(row.get("Webinar", "")), styles["BodyText"]),
+                    Paragraph(f"{int(row.get('Registrations', 0)):,}", styles["BodyText"]),
+                    Paragraph(str(row.get("URL", "")), styles["BodyText"]),
+                ]
+            )
+
+    table = Table(rows, colWidths=[3.1 * inch, 1.1 * inch, 2.3 * inch], repeatRows=1)
     table.setStyle(
         TableStyle(
             [
@@ -590,6 +651,20 @@ def _prepare_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return prepared
 
 
+def _prepare_webinar_frame(frame: pd.DataFrame | None) -> pd.DataFrame:
+    if frame is None or frame.empty:
+        return pd.DataFrame(columns=["Webinar", "Registrations", "URL"])
+    prepared = frame.copy()
+    prepared["registrations"] = pd.to_numeric(prepared["registrations"], errors="coerce").fillna(0).astype(int)
+    return prepared.rename(
+        columns={
+            "webinar_title": "Webinar",
+            "registrations": "Registrations",
+            "reports_url": "URL",
+        }
+    )[["Webinar", "Registrations", "URL"]]
+
+
 def _totals(frame: pd.DataFrame) -> list[tuple[str, str]]:
     impressions = frame["ad_impressions"].sum() if not frame.empty else 0
     clicks = frame["ad_clicks"].sum() if not frame.empty else 0
@@ -608,7 +683,16 @@ def _totals(frame: pd.DataFrame) -> list[tuple[str, str]]:
 def _elements_from_sections(sections: set[str]) -> list[str]:
     elements: list[str] = []
     if "kpis" in sections:
-        elements.extend(["kpi_impressions", "kpi_clicks", "kpi_ctr", "kpi_campaigns", "kpi_creatives"])
+        elements.extend([
+            "kpi_impressions",
+            "kpi_clicks",
+            "kpi_ctr",
+            "kpi_campaigns",
+            "kpi_creatives",
+            "kpi_webinar_registrations",
+        ])
+    if "webinars" in sections:
+        elements.extend(["kpi_webinar_registrations", "table_webinars"])
     if "visualizations" in sections:
         elements.extend([
             "chart_daily_delivery",

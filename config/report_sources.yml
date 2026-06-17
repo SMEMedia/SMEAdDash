@@ -2,7 +2,7 @@ categories:
   webinars:
     label: Webinars
     source: Webinar.net
-    status: planned
+    status: live
     metrics:
       - registrations
       - reports_page_url
@@ -55,4 +55,3 @@ categories:
     status: planned
     metrics:
       - leads_received
-

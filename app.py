@@ -12,6 +12,13 @@ from src.config import load_advertisers, load_report_sources
 from src.gam_client import GAMClient, GAMConfigError
 from src.pdf_report import build_pdf_report
 from src.reporting import ReportRequest, build_advertiser_report, export_report_frames
+from src.webinar_client import WebinarNetClient, WebinarNetConfigError, _empty_webinar_frame
+from src.webinar_listing import (
+    AdvancedManufacturingWebinarListing,
+    WebinarListingError,
+    normalize_title,
+    sponsor_matches,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -28,6 +35,8 @@ SME_COLORS = {
     "red": "#CF323B",
     "pale_blue": "#BCD9E9",
 }
+WEBINAR_API_CACHE_VERSION = 3
+WEBINAR_LISTING_CACHE_VERSION = 2
 
 REPORT_ELEMENTS = {
     "kpi_impressions": {"label": "KPI: Ad impressions", "section": "KPI summary", "type": "kpi"},
@@ -35,6 +44,8 @@ REPORT_ELEMENTS = {
     "kpi_ctr": {"label": "KPI: CTR", "section": "KPI summary", "type": "kpi"},
     "kpi_campaigns": {"label": "KPI: Campaigns", "section": "KPI summary", "type": "kpi"},
     "kpi_creatives": {"label": "KPI: Creatives", "section": "KPI summary", "type": "kpi"},
+    "kpi_webinar_registrations": {"label": "KPI: Webinar registrations", "section": "Webinars", "type": "kpi"},
+    "table_webinars": {"label": "Table: Webinars", "section": "Webinars", "type": "table"},
     "chart_daily_delivery": {"label": "Chart: Daily delivery", "section": "Visualizations", "type": "visualization"},
     "chart_daily_ctr": {"label": "Chart: Daily CTR", "section": "Visualizations", "type": "visualization"},
     "chart_campaign_performance": {"label": "Chart: Campaign performance", "section": "Visualizations", "type": "visualization"},
@@ -44,7 +55,6 @@ REPORT_ELEMENTS = {
     "table_campaign_detail": {"label": "Table: Campaign detail", "section": "Tables", "type": "table"},
     "table_creative_detail": {"label": "Table: Creative detail", "section": "Tables", "type": "table"},
     "image_creatives": {"label": "Image creative previews", "section": "Creative assets", "type": "visualization"},
-    "manual_webinars": {"label": "Manual: Webinars", "section": "Manual data", "type": "table"},
     "manual_enewsletter": {"label": "Manual: eNewsletter ads", "section": "Manual data", "type": "table"},
     "manual_retargeting": {"label": "Manual: Retargeting", "section": "Manual data", "type": "table"},
     "manual_custom_email": {"label": "Manual: Custom email", "section": "Manual data", "type": "table"},
@@ -209,6 +219,27 @@ def cached_creative_assets(creative_ids: tuple[str, ...]) -> pd.DataFrame:
     return GAMClient().creative_assets(list(creative_ids))
 
 
+@st.cache_data(show_spinner=False)
+def cached_webinars(
+    advertiser_name: str,
+    match_text: str,
+    start_date: date,
+    end_date: date,
+    cache_version: int,
+) -> pd.DataFrame:
+    return WebinarNetClient().webinars(
+        advertiser_name=advertiser_name,
+        match_text=match_text,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
+@st.cache_data(show_spinner=False)
+def cached_webinar_listing(cache_version: int) -> pd.DataFrame:
+    return AdvancedManufacturingWebinarListing().webinars()
+
+
 @st.cache_data
 def cached_sources() -> dict:
     return load_report_sources()
@@ -357,10 +388,6 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
     with st.sidebar.expander("Manual Data Entry", expanded=False):
         st.caption("Use these fields for report data that is not automated yet.")
 
-        st.markdown("**Webinars**")
-        webinar_registrations = manual_number("Registrations", "manual_webinar_registrations")
-        webinar_reports_url = st.text_input("Webinar.net reports URL", key="manual_webinar_reports_url")
-
         st.markdown("**eNewsletter Ads**")
         newsletter_delivered = manual_number("Newsletters delivered", "manual_newsletter_delivered")
         newsletter_opened = manual_number("Newsletters opened", "manual_newsletter_opened")
@@ -396,13 +423,6 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
     newsletter_ctr = newsletter_clicks / newsletter_delivered if newsletter_delivered else 0
 
     return {
-        "manual_webinars": {
-            "title": "Webinars",
-            "rows": [
-                ("Registrations", format_integer(webinar_registrations)),
-                ("Webinar.net reports URL", webinar_reports_url),
-            ],
-        },
         "manual_enewsletter": {
             "title": "eNewsletter Ads",
             "rows": [
@@ -462,6 +482,47 @@ def render_manual_section(element_id: str, manual_data: dict[str, dict[str, Any]
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
     render_if_selected(element_id, render_table)
+
+
+def webinar_detail_table(webinar_frame: pd.DataFrame) -> pd.DataFrame:
+    if webinar_frame.empty:
+        return pd.DataFrame(columns=["Webinar", "Registrations", "URL"])
+    detail = webinar_frame.copy()
+    detail["Registrations"] = detail["registrations"].map(format_integer)
+    return detail.rename(
+        columns={
+            "webinar_title": "Webinar",
+            "reports_url": "URL",
+        }
+    )[["Webinar", "Registrations", "URL"]]
+
+
+def match_webinars_from_listing(
+    webinar_frame: pd.DataFrame,
+    listing_frame: pd.DataFrame,
+    advertiser_name: str,
+) -> pd.DataFrame:
+    if webinar_frame.empty or listing_frame.empty:
+        return webinar_frame.iloc[0:0].copy()
+
+    sponsored = listing_frame[
+        listing_frame["listing_sponsor"].fillna("").apply(lambda value: sponsor_matches(value, advertiser_name))
+    ].copy()
+    if sponsored.empty:
+        return webinar_frame.iloc[0:0].copy()
+
+    sponsored["title_key"] = sponsored["listing_title"].map(normalize_title)
+    matched_titles = set(sponsored["title_key"].dropna())
+
+    matched = webinar_frame.copy()
+    matched["title_key"] = matched["webinar_title"].map(normalize_title)
+    matched = matched[matched["title_key"].isin(matched_titles)].copy()
+    if matched.empty:
+        return matched
+
+    sponsor_lookup = sponsored.set_index("title_key")["listing_sponsor"].to_dict()
+    matched["webinar_sponsor"] = matched["title_key"].map(sponsor_lookup).fillna(matched["webinar_sponsor"])
+    return matched.drop(columns=["title_key"])
 
 
 def prepare_gam_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -628,8 +689,11 @@ def render_source_status() -> None:
     sources = cached_sources().get("categories", {})
     rows = []
     for key, category in sources.items():
-        if key == "website_ads":
+        configured_status = str(category.get("status", "")).lower()
+        if configured_status == "live" or key == "website_ads":
             status = "Live"
+        elif configured_status == "starter":
+            status = "Starter"
         else:
             status = "Planned"
         rows.append(
@@ -675,7 +739,8 @@ with st.sidebar:
 
     selected_name = st.selectbox("Advertiser", advertisers["advertiser_name"].tolist())
     selected = advertisers.loc[advertisers["advertiser_name"] == selected_name].iloc[0].to_dict()
-    gam_advertiser_id = str(selected.get("gam_advertiser_id") or selected.get("advertiser_id"))
+    gam_advertiser_id = str(selected.get("gam_advertiser_id") or selected.get("advertiser_id") or "").strip()
+    has_gam_advertiser_id = bool(gam_advertiser_id and gam_advertiser_id.isdigit())
 
     default_end_date = date.today() - timedelta(days=1)
     start_date = st.date_input("Start date", default_end_date - timedelta(days=29))
@@ -686,8 +751,11 @@ with st.sidebar:
         st.stop()
 
     try:
-        with st.spinner("Loading campaigns..."):
-            campaigns = cached_campaigns(gam_advertiser_id, start_date, end_date)
+        if has_gam_advertiser_id:
+            with st.spinner("Loading campaigns..."):
+                campaigns = cached_campaigns(gam_advertiser_id, start_date, end_date)
+        else:
+            campaigns = pd.DataFrame(columns=["campaign_id", "campaign_name"])
     except GAMConfigError as exc:
         st.warning(str(exc))
         campaigns = pd.DataFrame(columns=["campaign_id", "campaign_name"])
@@ -703,6 +771,14 @@ with st.sidebar:
 
     selected_campaign = st.selectbox("Campaign", campaign_labels)
     campaign_id, campaign_name = campaign_lookup[selected_campaign]
+    use_webinar_api = st.checkbox("Pull Webinar.net data", value=False)
+    webinar_match_text = ""
+    if use_webinar_api:
+        webinar_match_text = st.text_input(
+            "Webinar fallback match text",
+            value=str(selected["advertiser_name"]),
+            help="Used only if the Advanced Manufacturing sponsor listing does not find a match.",
+        )
     output_mode = st.radio("Output", ["Dashboard", "Power BI export"], horizontal=False)
     run_report = st.button("Run report", type="primary", use_container_width=True)
 
@@ -736,7 +812,11 @@ if run_report or st.session_state.get("report_key") != report_key:
     )
     try:
         with st.spinner("Building report..."):
-            report = build_advertiser_report(request, allow_empty_ga4=True)
+            report = build_advertiser_report(
+                request,
+                allow_empty_ga4=True,
+                allow_empty_gam=not has_gam_advertiser_id,
+            )
     except GAMConfigError as exc:
         st.error(str(exc))
         st.stop()
@@ -764,6 +844,40 @@ with st.sidebar:
 
 frames = export_report_frames(report)
 gam_ads = prepare_gam_frame(report.gam_ad_performance)
+webinar_frame = _empty_webinar_frame()
+webinar_status = ""
+if use_webinar_api:
+    try:
+        with st.spinner("Loading Webinar.net data..."):
+            all_webinars = cached_webinars(
+                advertiser_name=str(selected["advertiser_name"]),
+                match_text="",
+                start_date=start_date,
+                end_date=end_date,
+                cache_version=WEBINAR_API_CACHE_VERSION,
+            )
+        try:
+            with st.spinner("Matching webinars by sponsor..."):
+                listing_frame = cached_webinar_listing(WEBINAR_LISTING_CACHE_VERSION)
+                webinar_frame = match_webinars_from_listing(
+                    all_webinars,
+                    listing_frame,
+                    str(selected["advertiser_name"]),
+                )
+        except WebinarListingError as exc:
+            st.warning(f"Advanced Manufacturing webinar listing could not be used: {exc}")
+            webinar_frame = _empty_webinar_frame()
+
+        if webinar_frame.empty and webinar_match_text:
+            searchable = all_webinars["webinar_match_text"].fillna("").str.lower()
+            webinar_frame = all_webinars[
+                searchable.str.contains(webinar_match_text.lower(), regex=False)
+            ].copy()
+        if webinar_frame.empty:
+            webinar_status = "No Webinar.net webinars matched this advertiser and date range."
+    except WebinarNetConfigError as exc:
+        webinar_status = str(exc)
+        st.warning(webinar_status)
 
 if output_mode == "Power BI export":
     st.subheader("Power BI tables")
@@ -772,6 +886,16 @@ if output_mode == "Power BI export":
             continue
         st.write(f"**{name}**")
         st.dataframe(frame, use_container_width=True, hide_index=True)
+    if not webinar_frame.empty:
+        st.write("**webinar_net_performance**")
+        st.dataframe(webinar_frame, use_container_width=True, hide_index=True)
+        st.download_button(
+            "Download Webinar.net performance CSV",
+            data=webinar_frame.to_csv(index=False),
+            file_name=f"{selected['advertiser_id']}_webinar_net_performance.csv",
+            mime="text/csv",
+            use_container_width=True,
+        )
     st.download_button(
         "Download GAM performance CSV",
         data=frames["gam_ad_performance"].to_csv(index=False),
@@ -784,7 +908,6 @@ if output_mode == "Power BI export":
 st.subheader("Website Ads")
 if gam_ads.empty:
     st.info("No GAM rows returned for this advertiser, campaign, and date range.")
-    st.stop()
 
 total_impressions = gam_ads["ad_impressions"].sum()
 total_clicks = gam_ads["ad_clicks"].sum()
@@ -953,9 +1076,27 @@ def render_image_creatives() -> None:
 
 render_if_selected("image_creatives", render_image_creatives)
 
+st.subheader("Webinars")
+webinar_registrations = int(webinar_frame["registrations"].sum()) if not webinar_frame.empty else 0
+webinar_kpi_col, _ = st.columns([1, 4])
+with webinar_kpi_col:
+    selectable_metric(
+        "kpi_webinar_registrations",
+        "Total registrations",
+        format_integer(webinar_registrations),
+    )
+
+element_header("Webinar Detail", "table_webinars")
+if webinar_frame.empty and webinar_status:
+    render_if_selected("table_webinars", lambda: st.info(webinar_status))
+else:
+    render_if_selected(
+        "table_webinars",
+        lambda: st.dataframe(webinar_detail_table(webinar_frame), use_container_width=True, hide_index=True),
+    )
+
 st.subheader("Manual Entries")
 for manual_element_id in [
-    "manual_webinars",
     "manual_enewsletter",
     "manual_retargeting",
     "manual_custom_email",
@@ -976,6 +1117,7 @@ try:
         end_date=end_date,
         campaign_name=campaign_name,
         gam_ads=gam_ads,
+        webinar_data=webinar_frame,
         creative_assets=image_creatives,
         manual_data=manual_data,
         logo_path=LOGO_PATH,

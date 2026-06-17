@@ -9,7 +9,7 @@ from typing import Any
 
 import pandas as pd
 
-from src.config import ROOT_DIR, load_environment
+from src.config import ROOT_DIR, load_environment, normalize_identifier
 
 
 class GAMConfigError(RuntimeError):
@@ -131,6 +131,7 @@ class GAMClient:
         }
         statement_filters = []
         statement_values = []
+        advertiser_id = normalize_identifier(advertiser_id)
         if advertiser_id:
             statement_filters.append("ADVERTISER_ID = :advertiser_id")
             statement_values.append(

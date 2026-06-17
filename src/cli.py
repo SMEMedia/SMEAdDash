@@ -7,10 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.config import load_advertisers
+from src.config import load_advertisers, normalize_identifier
 from src.gam_client import GAMClient, GAMConfigError
 from src.ga4_client import GA4ConfigError
 from src.reporting import ReportRequest, build_advertiser_report, export_report_frames
+from src.webinar_listing import AdvancedManufacturingWebinarListing, WebinarListingError, normalize_name
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +29,13 @@ def parse_args() -> argparse.Namespace:
     sync_gam = subparsers.add_parser("sync-gam-advertisers", help="Pull advertiser names from Google Ad Manager.")
     sync_gam.add_argument("--output", default="config/advertisers.csv")
     sync_gam.add_argument("--include-house-advertisers", action="store_true")
+
+    sync_webinars = subparsers.add_parser(
+        "sync-webinar-sponsors",
+        help="Add advertiser names from Advanced Manufacturing webinar sponsors to the advertiser CSV.",
+    )
+    sync_webinars.add_argument("--input", default="config/advertisers.csv")
+    sync_webinars.add_argument("--output", default="config/advertisers.csv")
     return parser.parse_args()
 
 
@@ -84,6 +92,88 @@ def sync_gam_advertisers(args: argparse.Namespace) -> None:
     print(f"Wrote {len(advertisers)} advertisers to {output_path}")
 
 
+def sync_webinar_sponsors(args: argparse.Namespace) -> None:
+    listing = AdvancedManufacturingWebinarListing().webinars()
+    sponsors = sorted(
+        {
+            str(value).strip()
+            for value in listing["listing_sponsor"].dropna().tolist()
+            if str(value).strip()
+        },
+        key=str.lower,
+    )
+
+    input_path = Path(args.input)
+    if input_path.exists():
+        advertisers = pd.read_csv(input_path, dtype=str).fillna("")
+    else:
+        advertisers = pd.DataFrame(columns=["advertiser_id", "advertiser_name"])
+
+    required_columns = [
+        "advertiser_id",
+        "advertiser_name",
+        "gam_advertiser_id",
+        "gam_advertiser_name",
+        "gam_company_type",
+        "gam_credit_status",
+        "source_system",
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "landing_page_contains",
+        "notes",
+    ]
+    for column in required_columns:
+        if column not in advertisers.columns:
+            advertisers[column] = ""
+    for column in ["advertiser_id", "gam_advertiser_id"]:
+        advertisers[column] = advertisers[column].map(normalize_identifier)
+
+    existing = {
+        normalize_name(value)
+        for value in advertisers["advertiser_name"].dropna().tolist()
+        if str(value).strip()
+    }
+
+    new_rows = []
+    for sponsor in sponsors:
+        normalized = normalize_name(sponsor)
+        if not normalized or normalized in existing:
+            continue
+        advertiser_id = f"webinar_{normalized.replace(' ', '_')}"
+        new_rows.append(
+            {
+                "advertiser_id": advertiser_id,
+                "advertiser_name": sponsor,
+                "gam_advertiser_id": "",
+                "gam_advertiser_name": "",
+                "gam_company_type": "",
+                "gam_credit_status": "",
+                "source_system": "Webinar scrape",
+                "utm_source": "",
+                "utm_medium": "",
+                "utm_campaign": "",
+                "landing_page_contains": "",
+                "notes": "Added from Advanced Manufacturing webinar sponsor listing.",
+            }
+        )
+        existing.add(normalized)
+
+    if new_rows:
+        advertisers = pd.concat([advertisers, pd.DataFrame(new_rows)], ignore_index=True)
+
+    advertisers = advertisers[required_columns]
+    advertisers = advertisers.sort_values(
+        "advertiser_name",
+        key=lambda series: series.str.lower(),
+        ignore_index=True,
+    )
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    advertisers.to_csv(output_path, index=False)
+    print(f"Added {len(new_rows)} webinar sponsors. Wrote {len(advertisers)} advertisers to {output_path}")
+
+
 def main() -> None:
     args = parse_args()
     try:
@@ -91,7 +181,9 @@ def main() -> None:
             export_all(args)
         elif args.command == "sync-gam-advertisers":
             sync_gam_advertisers(args)
-    except (GA4ConfigError, GAMConfigError) as exc:
+        elif args.command == "sync-webinar-sponsors":
+            sync_webinar_sponsors(args)
+    except (GA4ConfigError, GAMConfigError, WebinarListingError) as exc:
         print(f"Configuration error: {exc}", file=sys.stderr)
         raise SystemExit(1) from exc
 
