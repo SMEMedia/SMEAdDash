@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -43,6 +44,11 @@ REPORT_ELEMENTS = {
     "table_campaign_detail": {"label": "Table: Campaign detail", "section": "Tables", "type": "table"},
     "table_creative_detail": {"label": "Table: Creative detail", "section": "Tables", "type": "table"},
     "image_creatives": {"label": "Image creative previews", "section": "Creative assets", "type": "visualization"},
+    "manual_webinars": {"label": "Manual: Webinars", "section": "Manual data", "type": "table"},
+    "manual_enewsletter": {"label": "Manual: eNewsletter ads", "section": "Manual data", "type": "table"},
+    "manual_retargeting": {"label": "Manual: Retargeting", "section": "Manual data", "type": "table"},
+    "manual_custom_email": {"label": "Manual: Custom email", "section": "Manual data", "type": "table"},
+    "manual_lead_gen": {"label": "Manual: Lead gen", "section": "Manual data", "type": "table"},
 }
 
 
@@ -129,6 +135,11 @@ st.markdown(
     [data-testid="stDataFrame"] {
         border: 1px solid #d8e4ea;
         border-radius: 8px;
+    }
+    [data-testid="stDataFrame"] [role="columnheader"],
+    [data-testid="stDataFrame"] [data-testid="stTable"] th {
+        background: var(--sme-blue);
+        color: #ffffff;
     }
     [data-testid="stCheckbox"] label {
         white-space: nowrap;
@@ -336,6 +347,121 @@ def render_if_selected(element_id: str, render_fn) -> None:
         render_fn()
     else:
         removed_notice(element_id)
+
+
+def manual_number(label: str, key: str, min_value: int = 0) -> int:
+    return int(st.number_input(label, min_value=min_value, step=1, key=key))
+
+
+def collect_manual_data() -> dict[str, dict[str, Any]]:
+    with st.sidebar.expander("Manual Data Entry", expanded=False):
+        st.caption("Use these fields for report data that is not automated yet.")
+
+        st.markdown("**Webinars**")
+        webinar_registrations = manual_number("Registrations", "manual_webinar_registrations")
+        webinar_reports_url = st.text_input("Webinar.net reports URL", key="manual_webinar_reports_url")
+
+        st.markdown("**eNewsletter Ads**")
+        newsletter_delivered = manual_number("Newsletters delivered", "manual_newsletter_delivered")
+        newsletter_opened = manual_number("Newsletters opened", "manual_newsletter_opened")
+        newsletter_clicks = manual_number("Ad clicks", "manual_newsletter_clicks")
+        newsletter_creative = st.text_area("Ad creative notes or URL", key="manual_newsletter_creative")
+        newsletter_url = st.text_input(
+            "Most recent newsletter URL",
+            key="manual_newsletter_url",
+        )
+
+        st.markdown("**Retargeting**")
+        retargeting_impressions = manual_number("Ad impressions", "manual_retargeting_impressions")
+        retargeting_clicks = manual_number("Ad clicks", "manual_retargeting_clicks")
+        retargeting_creative = st.text_area("Ad creative notes or URL", key="manual_retargeting_creative")
+        retargeting_performance = st.text_area(
+            "Performance by ad creative",
+            key="manual_retargeting_performance",
+        )
+
+        st.markdown("**Custom Email**")
+        email_delivered = manual_number("Total delivered", "manual_email_delivered")
+        email_opened = manual_number("Total opened", "manual_email_opened")
+        email_click_rate = st.text_input("Click rate", key="manual_email_click_rate")
+        email_ctr = st.text_input("CTR", key="manual_email_ctr")
+        email_screenshot = st.text_input("Email screenshot URL", key="manual_email_screenshot")
+
+        st.markdown("**Lead Gen**")
+        lead_list = st.text_area("List of leads received", key="manual_lead_list")
+
+    retargeting_ctr = retargeting_clicks / retargeting_impressions if retargeting_impressions else 0
+    email_open_rate = email_opened / email_delivered if email_delivered else 0
+    newsletter_open_rate = newsletter_opened / newsletter_delivered if newsletter_delivered else 0
+    newsletter_ctr = newsletter_clicks / newsletter_delivered if newsletter_delivered else 0
+
+    return {
+        "manual_webinars": {
+            "title": "Webinars",
+            "rows": [
+                ("Registrations", format_integer(webinar_registrations)),
+                ("Webinar.net reports URL", webinar_reports_url),
+            ],
+        },
+        "manual_enewsletter": {
+            "title": "eNewsletter Ads",
+            "rows": [
+                ("Newsletters delivered", format_integer(newsletter_delivered)),
+                ("Newsletters opened", format_integer(newsletter_opened)),
+                ("Open rate", format_percent(newsletter_open_rate)),
+                ("Ad clicks", format_integer(newsletter_clicks)),
+                ("CTR", format_percent(newsletter_ctr)),
+                ("Ad creative", newsletter_creative),
+                ("Most recent newsletter URL", newsletter_url),
+            ],
+        },
+        "manual_retargeting": {
+            "title": "Retargeting",
+            "rows": [
+                ("Ad impressions", format_integer(retargeting_impressions)),
+                ("Ad clicks", format_integer(retargeting_clicks)),
+                ("Ad CTR", format_percent(retargeting_ctr)),
+                ("Ad creative", retargeting_creative),
+                ("Performance by ad creative", retargeting_performance),
+            ],
+        },
+        "manual_custom_email": {
+            "title": "Custom Email",
+            "rows": [
+                ("Total delivered", format_integer(email_delivered)),
+                ("Total opened", format_integer(email_opened)),
+                ("Open rate", format_percent(email_open_rate)),
+                ("Click rate", email_click_rate),
+                ("CTR", email_ctr),
+                ("Screenshot of email", email_screenshot),
+            ],
+        },
+        "manual_lead_gen": {
+            "title": "Lead Gen",
+            "rows": [("List of leads received", lead_list)],
+        },
+    }
+
+
+def has_manual_values(section: dict[str, Any]) -> bool:
+    rows = section.get("rows", [])
+    return any(str(value).strip() and str(value).strip() not in {"0", "0.00%"} for _, value in rows)
+
+
+def render_manual_section(element_id: str, manual_data: dict[str, dict[str, Any]]) -> None:
+    section = manual_data[element_id]
+    element_header(section["title"], element_id)
+
+    def render_table() -> None:
+        rows = [
+            {"Metric": metric, "Value": value or "-"}
+            for metric, value in section.get("rows", [])
+        ]
+        if not has_manual_values(section):
+            st.info("No manual values entered for this section yet.")
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+    render_if_selected(element_id, render_table)
 
 
 def prepare_gam_frame(frame: pd.DataFrame) -> pd.DataFrame:
@@ -579,6 +705,8 @@ with st.sidebar:
     campaign_id, campaign_name = campaign_lookup[selected_campaign]
     output_mode = st.radio("Output", ["Dashboard", "Power BI export"], horizontal=False)
     run_report = st.button("Run report", type="primary", use_container_width=True)
+
+manual_data = collect_manual_data()
 
 report_key = (
     str(selected.get("advertiser_id")),
@@ -825,6 +953,16 @@ def render_image_creatives() -> None:
 
 render_if_selected("image_creatives", render_image_creatives)
 
+st.subheader("Manual Entries")
+for manual_element_id in [
+    "manual_webinars",
+    "manual_enewsletter",
+    "manual_retargeting",
+    "manual_custom_email",
+    "manual_lead_gen",
+]:
+    render_manual_section(manual_element_id, manual_data)
+
 with st.expander("Source roadmap", expanded=False):
     render_source_status()
 
@@ -839,6 +977,7 @@ try:
         campaign_name=campaign_name,
         gam_ads=gam_ads,
         creative_assets=image_creatives,
+        manual_data=manual_data,
         logo_path=LOGO_PATH,
         elements=selected_pdf_elements or ["kpi_impressions"],
     )

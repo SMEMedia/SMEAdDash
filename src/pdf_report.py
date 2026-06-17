@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date
 from io import BytesIO
 from pathlib import Path
+from typing import Any
+from xml.sax.saxutils import escape
 
 import pandas as pd
 
@@ -29,6 +31,7 @@ def build_pdf_report(
     gam_ads: pd.DataFrame,
     logo_path: Path | None = None,
     creative_assets: pd.DataFrame | None = None,
+    manual_data: dict[str, dict[str, Any]] | None = None,
     sections: list[str] | None = None,
     elements: list[str] | None = None,
 ) -> bytes:
@@ -117,6 +120,16 @@ def build_pdf_report(
             leading=10,
         )
     )
+    styles.add(
+        ParagraphStyle(
+            name="TableHeader",
+            parent=styles["BodyText"],
+            textColor=colors.white,
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            leading=10,
+        )
+    )
 
     prepared = _prepare_frame(gam_ads)
     totals = _totals(prepared)
@@ -152,6 +165,20 @@ def build_pdf_report(
     if "image_creatives" in selected_elements:
         story.append(Paragraph("Image Creative Previews", styles["Section"]))
         story.extend(_image_creative_story(styles, creative_assets))
+
+    manual_keys = [
+        key for key in [
+            "manual_webinars",
+            "manual_enewsletter",
+            "manual_retargeting",
+            "manual_custom_email",
+            "manual_lead_gen",
+        ]
+        if key in selected_elements
+    ]
+    if manual_keys:
+        story.append(Paragraph("Manual Entries", styles["Section"]))
+        story.extend(_manual_data_story(styles, manual_data or {}, manual_keys))
 
     if "table_campaign_detail" in selected_elements or "table_creative_detail" in selected_elements:
         story.append(PageBreak())
@@ -226,13 +253,21 @@ def _metric_table(styles, totals, metric_keys: list[str]):
 
 def _summary_table(frame: pd.DataFrame, headings: list[str], max_rows: int):
     from reportlab.lib import colors
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import Paragraph, Table, TableStyle
-    from reportlab.lib.styles import getSampleStyleSheet
 
     styles = getSampleStyleSheet()
+    header_style = ParagraphStyle(
+        "SummaryTableHeader",
+        parent=styles["BodyText"],
+        textColor=colors.white,
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+    )
     body = frame.head(max_rows).copy()
-    rows = [headings]
+    rows = [[Paragraph(str(heading), header_style) for heading in headings]]
     for _, row in body.iterrows():
         rows.append([Paragraph(str(value), styles["BodyText"]) for value in row.tolist()])
 
@@ -241,7 +276,7 @@ def _summary_table(frame: pd.DataFrame, headings: list[str], max_rows: int):
     table.setStyle(
         TableStyle(
             [
-                ("BACKGROUND", (0, 0), (-1, 0), _color("navy")),
+                ("BACKGROUND", (0, 0), (-1, 0), _color("blue")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, -1), 8),
@@ -300,6 +335,50 @@ def _image_creative_story(styles, creative_assets: pd.DataFrame | None):
             )
         )
         story.extend([table, Spacer(1, 0.1 * inch)])
+    return story
+
+
+def _manual_data_story(styles, manual_data: dict[str, dict[str, Any]], manual_keys: list[str]):
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
+
+    story = []
+    for key in manual_keys:
+        section = manual_data.get(key, {})
+        title = section.get("title", key.replace("_", " ").title())
+        rows = section.get("rows", [])
+        table_rows = [
+            [Paragraph("Metric", styles["TableHeader"]), Paragraph("Value", styles["TableHeader"])]
+        ]
+        for metric, value in rows:
+            display_value = str(value or "-").strip() or "-"
+            table_rows.append(
+                [
+                    Paragraph(escape(str(metric)), styles["BodyText"]),
+                    Paragraph(escape(display_value).replace("\n", "<br/>"), styles["BodyText"]),
+                ]
+            )
+        if len(table_rows) == 1:
+            table_rows.append(["No values entered.", ""])
+
+        table = Table(table_rows, colWidths=[2.1 * inch, 4.4 * inch], repeatRows=1)
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), _color("blue")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 8),
+                    ("GRID", (0, 0), (-1, -1), 0.35, _color("gray")),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, _color("pale_blue")]),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ]
+            )
+        )
+        story.extend([Paragraph(escape(str(title)), styles["Section"]), table, Spacer(1, 0.1 * inch)])
     return story
 
 
