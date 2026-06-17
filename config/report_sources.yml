@@ -1,0 +1,58 @@
+categories:
+  webinars:
+    label: Webinars
+    source: Webinar.net
+    status: planned
+    metrics:
+      - registrations
+      - reports_page_url
+  enewsletter_ads:
+    label: eNewsletter Ads
+    source: HubSpot
+    status: planned
+    metrics:
+      - newsletters_delivered
+      - newsletters_opened
+      - ad_clicks
+      - ad_creative
+      - recent_newsletter_url
+  website_ads:
+    label: Website Ads
+    source: GAM and GA4
+    status: starter
+    metrics:
+      - ad_impressions
+      - ad_clicks
+      - ad_ctr
+      - ad_creative
+      - performance_by_ad_creative
+      - ga4_sessions
+      - ga4_users
+      - ga4_conversions
+  retargeting:
+    label: Retargeting
+    source: StackAdapt
+    status: planned
+    metrics:
+      - ad_impressions
+      - ad_clicks
+      - ad_ctr
+      - ad_creative
+      - performance_by_ad_creative
+  custom_email:
+    label: Custom Email
+    source: HubSpot
+    status: planned
+    metrics:
+      - total_delivered
+      - total_opened
+      - click_rate
+      - ctr
+      - email_screenshot
+  lead_gen:
+    label: Lead Gen
+    source: Anteriad
+    status: planned
+    metrics:
+      - leads_received
+

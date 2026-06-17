@@ -1,0 +1,13 @@
+ad_manager:
+  application_name: Advertiser Dashboard Automation
+  network_code: INSERT_NETWORK_CODE_HERE
+
+  # Option A: Service account.
+  # Replace this with the real downloaded JSON key path.
+  path_to_private_key_file: C:\path\to\gam-service-account.json
+
+  # Option B: Installed-app OAuth.
+  # Use these instead of path_to_private_key_file if you have a GAM refresh token.
+  # client_id: INSERT_CLIENT_ID
+  # client_secret: INSERT_CLIENT_SECRET
+  # refresh_token: INSERT_REFRESH_TOKEN

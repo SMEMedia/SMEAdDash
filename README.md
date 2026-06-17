@@ -1,0 +1,138 @@
+# Advertiser Dashboard Automation
+
+This project is a starter framework for client-facing advertiser dashboards.
+It supports two reporting paths:
+
+1. Streamlit app: choose one advertiser and generate a report view.
+2. Power BI data layer: export advertiser-level tables to CSV or Excel for use in a filtered Power BI template.
+
+The first implemented connector is GA4. Other source systems are represented in the shared schema so they can be added without changing the dashboard/reporting flow.
+
+## Setup
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+Create a `.env` file from the example:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+The default GA4 setup reuses the OAuth files from the sibling `webscraping` project:
+
+```text
+GA4_PROPERTY_ID=123456789
+GA4_CLIENT_SECRET_FILE=..\webscraping\config\client_secret.json
+GA4_TOKEN_FILE=..\webscraping\config\token.json
+```
+
+If those values are blank, the app defaults to property `432233519` and the same sibling paths above. You can still use a service account by setting `GOOGLE_APPLICATION_CREDENTIALS`.
+
+## Advertiser Config
+
+Advertisers can come from either:
+
+- Google Ad Manager, using the `sync-gam-advertisers` command.
+- `config/advertisers.csv`, for manual overrides or GA4 matching rules.
+
+To pull advertiser names from Google Ad Manager:
+
+```powershell
+Copy-Item config/googleads.yaml.example config/googleads.yaml
+```
+
+Fill in the GAM `network_code` and service-account key path, then run:
+
+```powershell
+python -m src.cli sync-gam-advertisers --output config/advertisers.csv
+```
+
+`config/googleads.yaml` can use either of these authentication styles:
+
+```yaml
+ad_manager:
+  application_name: Advertiser Dashboard Automation
+  network_code: YOUR_GAM_NETWORK_CODE
+  path_to_private_key_file: C:\real\path\to\gam-service-account.json
+```
+
+or:
+
+```yaml
+ad_manager:
+  application_name: Advertiser Dashboard Automation
+  network_code: YOUR_GAM_NETWORK_CODE
+  client_id: YOUR_CLIENT_ID
+  client_secret: YOUR_CLIENT_SECRET
+  refresh_token: YOUR_REFRESH_TOKEN
+```
+
+For service accounts, the service-account email also needs user/API access in the Google Ad Manager network.
+
+This writes GAM advertisers into the local advertiser config with:
+
+- `advertiser_id`
+- `advertiser_name`
+- `gam_advertiser_id`
+- `gam_advertiser_name`
+- `gam_company_type`
+- `gam_credit_status`
+
+The Streamlit app can also read advertisers live from GAM from the sidebar.
+
+Each row can include:
+
+- `advertiser_id`: stable internal ID.
+- `advertiser_name`: display name.
+- `utm_source`, `utm_medium`, `utm_campaign`: optional filters used to isolate advertiser traffic in GA4.
+- `landing_page_contains`: optional landing page filter.
+- `notes`: free-form context.
+
+Use whichever identifiers match how advertiser campaigns are tagged today. The GA4 connector builds a combined filter from the populated fields.
+
+## Streamlit App
+
+```powershell
+streamlit run app.py
+```
+
+The app lets you select an advertiser, date range, and output mode. It currently shows GA4 website performance and placeholder sections for the remaining systems.
+
+## Power BI Export
+
+Export all advertisers to CSV files:
+
+```powershell
+python -m src.cli export --format csv --output-dir data/exports
+```
+
+Export all advertisers to one Excel workbook:
+
+```powershell
+python -m src.cli export --format xlsx --output-dir data/exports
+```
+
+The exported tables are shaped for Power BI filtering by `advertiser_id` and `advertiser_name`.
+
+Current exported tables:
+
+- `report_metadata`
+- `ga4_website_performance`
+- `gam_ad_performance`
+
+`gam_ad_performance` includes ad impressions, ad clicks, and ad CTR by GAM advertiser and date.
+
+## Source Roadmap
+
+| Category | System | Status |
+| --- | --- | --- |
+| Webinars | Webinar.net | Planned |
+| eNewsletter Ads | HubSpot | Planned |
+| Website Ads | GAM and GA4 | GA4 starter implemented |
+| Retargeting | StackAdapt | Planned |
+| Custom Email | HubSpot | Planned |
+| Lead Gen | Anteriad | Planned |
