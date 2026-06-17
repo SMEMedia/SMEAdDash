@@ -551,8 +551,9 @@ with st.sidebar:
     selected = advertisers.loc[advertisers["advertiser_name"] == selected_name].iloc[0].to_dict()
     gam_advertiser_id = str(selected.get("gam_advertiser_id") or selected.get("advertiser_id"))
 
-    end_date = st.date_input("End date", date.today() - timedelta(days=1))
-    start_date = st.date_input("Start date", end_date - timedelta(days=29))
+    default_end_date = date.today() - timedelta(days=1)
+    start_date = st.date_input("Start date", default_end_date - timedelta(days=29))
+    end_date = st.date_input("End date", default_end_date)
 
     if start_date > end_date:
         st.error("Start date must be before end date.")
