@@ -1,0 +1,8 @@
+task mode: create
+primary deck-profile: engineering-platform
+secondary profile gates: strategy-leadership
+required proof objects: current-state architecture, HubSpot data contract, endpoint-level implementation flow, permission matrix, delivery roadmap
+source requirements: current project behavior and official HubSpot developer documentation dated June 18, 2026
+brand constraints: use the verified SME logo from assets/sme_logo.png; do not fabricate HubSpot identity assets
+QA gates: technically precise connectors, legible endpoint labels, least-privilege permission request, no unsupported claims
+known missing inputs: HubSpot portal tier, current email naming conventions, whether email creative files are public or private

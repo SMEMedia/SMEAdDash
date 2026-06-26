@@ -1,0 +1,10 @@
+Thesis: HubSpot access closes the largest remaining reporting gap and can be implemented with one controlled private app and a narrowly defined data contract.
+Audience: HubSpot administrator / marketing operations owner and project stakeholders.
+Arc:
+1. The dashboard turns fragmented campaign evidence into one client-ready report.
+2. GAM and Webinar.net prove the integration pattern; HubSpot is the next high-value source.
+3. HubSpot supplies newsletter and custom-email delivery, engagement, creative, and web-version evidence.
+4. A deterministic matching contract prevents advertiser attribution errors.
+5. The build is a four-stage read-only pipeline with validation and operational controls.
+6. The access request is specific: super-admin creation of a private app, content scope, optional files scope.
+7. The meeting should end with owners, access, sample campaigns, and acceptance criteria.

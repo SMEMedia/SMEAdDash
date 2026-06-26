@@ -1,0 +1,19 @@
+Verified identity asset:
+- SME logo: C:/Users/mschneider/OneDrive - SME/Desktop/Playground/Advertizing Dashboards/assets/sme_logo.png
+
+Official HubSpot sources accessed June 18, 2026:
+- https://developers.hubspot.com/docs/api-reference/latest/marketing/marketing-emails/guide
+- https://developers.hubspot.com/docs/api-reference/latest/marketing/marketing-emails/get-emails
+- https://developers.hubspot.com/docs/api-reference/latest/marketing/marketing-emails/statistics/get-statistics
+- https://developers.hubspot.com/docs/api-reference/legacy/reporting/email-analytics/guide
+- https://developers.hubspot.com/docs/api-reference/legacy/reporting/email-analytics/events/get-email-public-v1-events
+- https://developers.hubspot.com/docs/apps/developer-platform/build-apps/authentication/scopes
+- https://developers.hubspot.com/docs/apps/legacy-apps/private-apps/overview
+- https://developers.hubspot.com/docs/api-reference/latest/files/guide
+
+Key verified facts:
+- Current Marketing Emails endpoints and the Email Events endpoint require the content scope.
+- Marketing email statistics include counters such as delivered/open and ratios such as openratio/clickratio.
+- CLICK events include the clicked URL, enabling advertiser-link attribution.
+- A HubSpot super admin is required to create/access legacy private apps.
+- files is optional for private File Manager assets; public webversion URLs and public asset URLs can be used without it.

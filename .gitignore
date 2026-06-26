@@ -3,17 +3,6 @@
 __pycache__/
 *.py[cod]
 data/exports/
-
-# Local credentials and API config
-config/googleads.yaml
+config/advertizerdashboard-acfc4bf4500d.json
 config/gam_oauth_client.json
-config/*.json
-config/*secret*.json
-config/token.json
-
-# Power BI local artifacts
-*.pbix
-SME_Theme*.json
-
-# Duplicate/local image downloads
-*removebg-preview*.png
+config/googleads.yaml

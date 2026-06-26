@@ -71,6 +71,19 @@ ad_manager:
   refresh_token: YOUR_REFRESH_TOKEN
 ```
 
+If the Google Ad Manager OAuth refresh token expires or is revoked, generate a
+new one from the OAuth client file and replace only the `refresh_token` value in
+`config/googleads.yaml`:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -c "from google_auth_oauthlib.flow import InstalledAppFlow; flow = InstalledAppFlow.from_client_secrets_file('config/gam_oauth_client.json', scopes=['https://www.googleapis.com/auth/admanager']); creds = flow.run_local_server(port=0, access_type='offline', prompt='consent'); print(creds.refresh_token)"
+```
+
+Sign in with a Google account that has access to the configured Google Ad
+Manager network. Do not replace the `client_id` or `client_secret` unless the
+OAuth client itself changed.
+
 For service accounts, the service-account email also needs user/API access in the Google Ad Manager network.
 
 This writes GAM advertisers into the local advertiser config with:
