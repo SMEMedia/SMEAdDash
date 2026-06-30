@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 import base64
+import inspect
 from pathlib import Path
 from typing import Any
 
@@ -9,18 +10,19 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-from src.config import load_advertisers, load_report_sources
+from src.config import load_advertisers, load_advertisers_from_google_sheet, load_report_sources, save_advertisers_to_google_sheet
 from src.gam_client import GAMClient, GAMConfigError
 from src.hubspot_client import HubSpotConfigError, normalize_placement_frame
+from src.master_metrics import (
+    advertiser_rows_from_master_tabs,
+    load_enewsletter_placements,
+    load_lead_gen,
+    merge_advertiser_sources,
+    webinars_for_advertiser,
+)
 from src.pdf_report import build_pdf_report
 from src.reporting import ReportRequest, build_advertiser_report
 from src.webinar_client import WebinarNetClient, WebinarNetConfigError, _empty_webinar_frame
-from src.webinar_listing import (
-    AdvancedManufacturingWebinarListing,
-    WebinarListingError,
-    normalize_title,
-    sponsor_matches,
-)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -52,7 +54,11 @@ REPORT_ELEMENTS = {
     "kpi_email_open_rate": {"label": "KPI: Email open rate", "section": "HubSpot Email", "type": "kpi"},
     "kpi_email_clicks": {"label": "KPI: Email clicks", "section": "HubSpot Email", "type": "kpi"},
     "kpi_email_click_rate": {"label": "KPI: Email click rate", "section": "HubSpot Email", "type": "kpi"},
+    "kpi_lead_goal": {"label": "KPI: Lead goal", "section": "Lead Gen", "type": "kpi"},
+    "kpi_leads_received": {"label": "KPI: Leads received", "section": "Lead Gen", "type": "kpi"},
+    "kpi_leads_remaining": {"label": "KPI: Leads remaining", "section": "Lead Gen", "type": "kpi"},
     "table_webinars": {"label": "Table: Webinars", "section": "Webinars", "type": "table"},
+    "table_lead_gen": {"label": "Table: Lead gen", "section": "Lead Gen", "type": "table"},
     "chart_daily_delivery": {"label": "Chart: Daily delivery", "section": "Website Ads", "type": "visualization"},
     "chart_daily_ctr": {"label": "Chart: Daily CTR", "section": "Website Ads", "type": "visualization"},
     "chart_campaign_performance": {"label": "Chart: Campaign performance", "section": "Website Ads", "type": "visualization"},
@@ -67,8 +73,12 @@ REPORT_ELEMENTS = {
     "table_creative_detail": {"label": "Table: Creative detail", "section": "Website Ads", "type": "table"},
     "image_creatives": {"label": "Image creative previews", "section": "Website Ads", "type": "visualization"},
     "manual_enewsletter": {"label": "HubSpot: eNewsletter ads", "section": "HubSpot Email", "type": "table"},
+    "manual_website_ads": {"label": "Manual: Website ads", "section": "Manual data", "type": "table"},
+    "manual_webinars": {"label": "Manual: Webinars", "section": "Manual data", "type": "table"},
+    "manual_enewsletter_entry": {"label": "Manual: eNewsletter ads", "section": "Manual data", "type": "table"},
     "manual_retargeting": {"label": "Manual: Retargeting", "section": "Manual data", "type": "table"},
     "manual_custom_email": {"label": "HubSpot: Custom email", "section": "HubSpot Email", "type": "table"},
+    "manual_custom_email_entry": {"label": "Manual: Custom email", "section": "Manual data", "type": "table"},
     "manual_lead_gen": {"label": "Manual: Lead gen", "section": "Manual data", "type": "table"},
 }
 
@@ -220,7 +230,14 @@ st.markdown(
 
 @st.cache_data
 def cached_advertisers() -> pd.DataFrame:
-    return load_advertisers()
+    frame = load_advertisers_from_google_sheet()
+    frame.attrs["source"] = "Google Sheet"
+    return frame
+
+
+@st.cache_data(show_spinner=False)
+def cached_master_advertisers() -> pd.DataFrame:
+    return advertiser_rows_from_master_tabs()
 
 
 @st.cache_data
@@ -243,24 +260,76 @@ def cached_creative_assets(creative_ids: tuple[str, ...]) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
-def cached_webinars(
-    advertiser_name: str,
-    match_text: str,
-    start_date: date,
-    end_date: date,
-    cache_version: int,
-) -> pd.DataFrame:
-    return WebinarNetClient().webinars(
-        advertiser_name=advertiser_name,
-        match_text=match_text,
-        start_date=start_date,
-        end_date=end_date,
-    )
+def cached_webinars_from_sheet(advertiser_name: str, start_date: date, end_date: date) -> pd.DataFrame:
+    return webinars_for_advertiser(advertiser_name, start_date, end_date)
 
 
 @st.cache_data(show_spinner=False)
-def cached_webinar_listing(cache_version: int) -> pd.DataFrame:
-    return AdvancedManufacturingWebinarListing().webinars()
+def cached_lead_gen(advertiser_name: str, start_date: date, end_date: date) -> pd.DataFrame:
+    return load_lead_gen(advertiser_name, start_date, end_date)
+
+
+@st.cache_data(show_spinner=False)
+def cached_enewsletter_placements() -> pd.DataFrame:
+    return load_enewsletter_placements()
+
+
+def gam_rows_for_advertiser_sheet(gam_frame: pd.DataFrame) -> pd.DataFrame:
+    if gam_frame.empty:
+        return pd.DataFrame()
+    rows = gam_frame.copy().fillna("")
+    for column in [
+        "advertiser_id",
+        "advertiser_name",
+        "gam_advertiser_id",
+        "gam_advertiser_name",
+        "gam_company_type",
+        "gam_credit_status",
+    ]:
+        if column not in rows.columns:
+            rows[column] = ""
+    rows["source_system"] = "GAM"
+    rows["gam"] = "true"
+    rows["webinar"] = "false"
+    rows["email"] = "false"
+    rows["lead_gen"] = "false"
+    for column in ["utm_source", "utm_medium", "utm_campaign", "landing_page_contains", "notes"]:
+        if column not in rows.columns:
+            rows[column] = ""
+    rows.loc[rows["notes"].astype(str).str.strip() == "", "notes"] = "Synced from Google Ad Manager advertiser list."
+    return rows[
+        [
+            "advertiser_id",
+            "advertiser_name",
+            "gam_advertiser_id",
+            "gam_advertiser_name",
+            "gam_company_type",
+            "gam_credit_status",
+            "gam",
+            "webinar",
+            "email",
+            "lead_gen",
+            "source_system",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "landing_page_contains",
+            "notes",
+        ]
+    ]
+
+
+def sync_advertiser_sheet(include_house_advertisers: bool) -> pd.DataFrame:
+    current = load_advertisers_from_google_sheet()
+    gam_rows = gam_rows_for_advertiser_sheet(cached_gam_advertisers(include_house_advertisers))
+    master_rows = advertiser_rows_from_master_tabs()
+    synced = merge_advertiser_sources(current, gam_rows)
+    synced = merge_advertiser_sources(synced, master_rows)
+    save_advertisers_to_google_sheet(synced)
+    cached_advertisers.clear()
+    cached_master_advertisers.clear()
+    cached_gam_advertisers.clear()
+    return synced
 
 
 @st.cache_data
@@ -441,6 +510,7 @@ def available_report_elements(
     gam_frame: pd.DataFrame,
     webinar_frame: pd.DataFrame,
     email_frame: pd.DataFrame,
+    lead_gen_frame: pd.DataFrame,
     manual_data: dict[str, dict[str, Any]],
 ) -> list[str]:
     available: set[str] = set()
@@ -450,7 +520,16 @@ def available_report_elements(
         available.update(report_section_element_ids("Webinars"))
     if not email_frame.empty:
         available.update(report_section_element_ids("HubSpot Email"))
-    for element_id in ["manual_retargeting", "manual_lead_gen"]:
+    if not lead_gen_frame.empty:
+        available.update(report_section_element_ids("Lead Gen"))
+    for element_id in [
+        "manual_website_ads",
+        "manual_webinars",
+        "manual_enewsletter_entry",
+        "manual_retargeting",
+        "manual_custom_email_entry",
+        "manual_lead_gen",
+    ]:
         if element_id in manual_data and has_manual_values(manual_data[element_id]):
             available.add(element_id)
     return [element for element in all_report_element_ids() if element in available]
@@ -529,6 +608,25 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
     with st.sidebar.expander("Manual Data Entry", expanded=False):
         st.caption("Use these fields for report data that is not automated yet.")
 
+        st.markdown("**Website Ads**")
+        website_impressions = manual_number("Website ad impressions", "manual_website_impressions")
+        website_clicks = manual_number("Website ad clicks", "manual_website_clicks")
+        website_creative = st.text_area("Website ad creative notes or URL", key="manual_website_creative")
+        website_notes = st.text_area("Website ad performance notes", key="manual_website_notes")
+
+        st.markdown("**Webinars**")
+        webinar_title = st.text_input("Webinar title", key="manual_webinar_title")
+        webinar_registrations = manual_number("Webinar registrations", "manual_webinar_registrations")
+        webinar_attendees = manual_number("Webinar attendees", "manual_webinar_attendees")
+        webinar_url = st.text_input("Webinar report URL", key="manual_webinar_url")
+
+        st.markdown("**eNewsletter Ads**")
+        newsletter_delivered = manual_number("Emails delivered", "manual_newsletter_delivered")
+        newsletter_opened = manual_number("Emails opened", "manual_newsletter_opened")
+        newsletter_clicks = manual_number("Clicks", "manual_newsletter_clicks")
+        newsletter_ad_type = st.text_input("Ad type", key="manual_newsletter_ad_type")
+        newsletter_creative = st.text_area("Creative notes or URL", key="manual_newsletter_creative")
+
         st.markdown("**Retargeting**")
         retargeting_impressions = manual_number("Ad impressions", "manual_retargeting_impressions")
         retargeting_clicks = manual_number("Ad clicks", "manual_retargeting_clicks")
@@ -541,6 +639,7 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
         st.markdown("**Custom Email**")
         email_delivered = manual_number("Total delivered", "manual_email_delivered")
         email_opened = manual_number("Total opened", "manual_email_opened")
+        email_clicks = manual_number("Total clicks", "manual_email_clicks")
         email_click_rate = st.text_input("Click rate", key="manual_email_click_rate")
         email_ctr = st.text_input("CTR", key="manual_email_ctr")
         email_screenshot = st.text_input("Email screenshot URL", key="manual_email_screenshot")
@@ -550,10 +649,45 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
         anteriad_leads = manual_number("Anteriad leads received", "manual_anteriad_leads")
         anteriad_lead_list = st.text_area("Anteriad lead list or notes", key="manual_anteriad_lead_list")
 
+    website_ctr = website_clicks / website_impressions if website_impressions else 0
+    newsletter_open_rate = newsletter_opened / newsletter_delivered if newsletter_delivered else 0
+    newsletter_click_rate = newsletter_clicks / newsletter_delivered if newsletter_delivered else 0
     retargeting_ctr = retargeting_clicks / retargeting_impressions if retargeting_impressions else 0
     email_open_rate = email_opened / email_delivered if email_delivered else 0
+    email_calculated_click_rate = email_clicks / email_delivered if email_delivered else 0
 
     return {
+        "manual_website_ads": {
+            "title": "Website Ads",
+            "rows": [
+                ("Ad impressions", format_integer(website_impressions)),
+                ("Ad clicks", format_integer(website_clicks)),
+                ("CTR", format_percent(website_ctr)),
+                ("Creative", website_creative),
+                ("Performance notes", website_notes),
+            ],
+        },
+        "manual_webinars": {
+            "title": "Webinars",
+            "rows": [
+                ("Webinar title", webinar_title),
+                ("Registrations", format_integer(webinar_registrations)),
+                ("Attendees", format_integer(webinar_attendees)),
+                ("Report URL", webinar_url),
+            ],
+        },
+        "manual_enewsletter_entry": {
+            "title": "eNewsletter Ads",
+            "rows": [
+                ("Emails delivered", format_integer(newsletter_delivered)),
+                ("Emails opened", format_integer(newsletter_opened)),
+                ("Open rate", format_percent(newsletter_open_rate)),
+                ("Clicks", format_integer(newsletter_clicks)),
+                ("Click rate", format_percent(newsletter_click_rate)),
+                ("Ad type", newsletter_ad_type),
+                ("Creative", newsletter_creative),
+            ],
+        },
         "manual_retargeting": {
             "title": "Retargeting",
             "rows": [
@@ -570,7 +704,20 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
                 ("Total delivered", format_integer(email_delivered)),
                 ("Total opened", format_integer(email_opened)),
                 ("Open rate", format_percent(email_open_rate)),
-                ("Click rate", email_click_rate),
+                ("Total clicks", format_integer(email_clicks)),
+                ("Click rate", email_click_rate or format_percent(email_calculated_click_rate)),
+                ("CTR", email_ctr),
+                ("Screenshot of email", email_screenshot),
+            ],
+        },
+        "manual_custom_email_entry": {
+            "title": "Custom Email",
+            "rows": [
+                ("Total delivered", format_integer(email_delivered)),
+                ("Total opened", format_integer(email_opened)),
+                ("Open rate", format_percent(email_open_rate)),
+                ("Total clicks", format_integer(email_clicks)),
+                ("Click rate", email_click_rate or format_percent(email_calculated_click_rate)),
                 ("CTR", email_ctr),
                 ("Screenshot of email", email_screenshot),
             ],
@@ -719,6 +866,22 @@ def webinar_detail_table(webinar_frame: pd.DataFrame) -> pd.DataFrame:
             "reports_url": "URL",
         }
     )[["Webinar", "Registrations", "URL"]]
+
+
+def lead_gen_detail_table(lead_gen_frame: pd.DataFrame) -> pd.DataFrame:
+    if lead_gen_frame.empty:
+        return pd.DataFrame(columns=["Advertiser", "Start date", "End date", "Lead goal", "Leads received", "Leads remaining"])
+    detail = lead_gen_frame.copy()
+    for column in ["lead_goal", "leads_received", "leads_remaining"]:
+        detail[column] = pd.to_numeric(detail[column], errors="coerce").fillna(0).astype(int)
+    detail["Start date"] = pd.to_datetime(detail["start_date"], errors="coerce").dt.strftime("%Y-%m-%d").fillna("")
+    detail["End date"] = pd.to_datetime(detail["end_date"], errors="coerce").dt.strftime("%Y-%m-%d").fillna("")
+    detail["Lead goal"] = detail["lead_goal"].map(format_integer)
+    detail["Leads received"] = detail["leads_received"].map(format_integer)
+    detail["Leads remaining"] = detail["leads_remaining"].map(format_integer)
+    return detail.rename(columns={"advertiser_name": "Advertiser"})[
+        ["Advertiser", "Start date", "End date", "Lead goal", "Leads received", "Leads remaining"]
+    ]
 
 
 def match_webinars_from_listing(
@@ -1161,6 +1324,36 @@ def render_source_status() -> None:
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 
+def render_advertiser_source_editor(advertisers: pd.DataFrame) -> None:
+    if not st.session_state.get("show_advertiser_source_editor", False):
+        return
+
+    with st.expander("Advertiser Source Sheet", expanded=True):
+        st.caption("Edit advertiser rows here, then save to the Google Sheet.")
+        edited = st.data_editor(
+            advertisers.fillna("").astype(str),
+            num_rows="dynamic",
+            use_container_width=True,
+            hide_index=True,
+            key="advertiser_source_editor",
+        )
+        save_col, close_col = st.columns([1, 4])
+        with save_col:
+            if st.button("Save advertiser source", type="primary", use_container_width=True):
+                try:
+                    save_advertisers_to_google_sheet(edited)
+                except Exception as exc:
+                    st.error(f"Could not save advertiser source sheet: {exc}")
+                else:
+                    cached_advertisers.clear()
+                    st.success("Advertiser source sheet saved.")
+                    st.rerun()
+        with close_col:
+            if st.button("Close editor", use_container_width=True):
+                st.session_state["show_advertiser_source_editor"] = False
+                st.rerun()
+
+
 header_logo, header_text = st.columns([1, 5], vertical_alignment="center")
 with header_logo:
     if LOGO_PATH.exists():
@@ -1177,26 +1370,33 @@ with header_text:
     )
 
 
-uploaded_newsletter_file = None
 with st.sidebar:
     st.header("Report")
-    advertiser_source = st.radio("Advertiser source", ["Local CSV", "Google Ad Manager"])
-    include_house = st.checkbox("Include house advertisers", value=False)
+    include_house = st.checkbox("Include house advertisers when refreshing sheet", value=False)
     search_missing_advertiser = st.checkbox("Search advertiser not shown in list", value=False)
 
-    if advertiser_source == "Google Ad Manager":
-        try:
-            advertisers = cached_gam_advertisers(include_house)
-        except GAMConfigError as exc:
-            st.warning(str(exc))
-            advertisers = cached_advertisers()
-            st.caption("Using local CSV.")
-    else:
-        advertisers = cached_advertisers()
+    advertisers = cached_advertisers()
 
     if advertisers.empty:
         st.error("No advertisers found.")
         st.stop()
+
+    with st.expander("Advertiser source", expanded=False):
+        st.caption("Loaded from: Google Sheet `Advertiser Source` / `advertisers`.")
+        if st.button("Refresh advertiser sheet", use_container_width=True):
+            try:
+                with st.spinner("Refreshing advertiser sheet from GAM and master metrics tabs..."):
+                    synced_advertisers = sync_advertiser_sheet(include_house)
+            except Exception as exc:
+                st.error(f"Could not refresh advertiser sheet: {exc}")
+            else:
+                cached_enewsletter_placements.clear()
+                cached_webinars_from_sheet.clear()
+                cached_lead_gen.clear()
+                st.success(f"Advertiser sheet refreshed with {len(synced_advertisers):,} advertisers.")
+                st.rerun()
+        if st.button("Edit advertiser source sheet", use_container_width=True):
+            st.session_state["show_advertiser_source_editor"] = True
 
     selected_name = st.selectbox(
         "Advertiser",
@@ -1210,7 +1410,7 @@ with st.sidebar:
             "Advertiser name",
             value="",
             placeholder="Type company name",
-            help="Searches this name across Google Ad Manager, Webinar.net, and HubSpot custom emails for the selected date range.",
+            help="Searches this name across Google Ad Manager, the master metrics sheet, and HubSpot custom emails for the selected date range.",
         ).strip()
         if typed_advertiser_name:
             gam_match = find_gam_advertiser_by_name(typed_advertiser_name, include_house)
@@ -1226,7 +1426,7 @@ with st.sidebar:
             if gam_match:
                 st.caption(f"Matched in Google Ad Manager: {gam_match.get('advertiser_name', typed_advertiser_name)}")
             else:
-                st.caption("No Google Ad Manager advertiser match found. Webinar.net and HubSpot will still search by name.")
+                st.caption("No Google Ad Manager advertiser match found. Master sheet data and HubSpot will still search by name.")
     gam_advertiser_id = str(selected.get("gam_advertiser_id") or selected.get("advertiser_id") or "").strip()
     has_gam_advertiser_id = bool(gam_advertiser_id and gam_advertiser_id.isdigit())
 
@@ -1240,28 +1440,9 @@ with st.sidebar:
 
     st.markdown("**Connected data pulls**")
     use_gam_data = st.checkbox("Pull Google Ad Manager data", value=True, key="pull_gam_data")
-    use_webinar_api = st.checkbox("Pull Webinar.net data", value=True, key="pull_webinar_net")
+    use_webinar_api = st.checkbox("Pull webinar sheet data", value=True, key="pull_webinar_net")
     use_hubspot_email = st.checkbox("Pull HubSpot email data", value=True, key="pull_hubspot_email")
-    webinar_match_text = ""
-    if use_webinar_api:
-        webinar_match_text = st.text_input(
-            "Webinar fallback match text",
-            value=str(selected["advertiser_name"]),
-            help="Used only if the Advanced Manufacturing sponsor listing does not find a match.",
-            key=f"webinar_fallback_match_text_{safe_filename(str(selected['advertiser_name']))}",
-        )
-    if use_hubspot_email:
-        with st.expander("eNewsletter placement file", expanded=False):
-            default_newsletter_file = BASE_DIR / "eNewsletter Ad Metrics.csv"
-            if default_newsletter_file.exists():
-                st.caption(f"Default: {default_newsletter_file.name}")
-            else:
-                st.caption("Default: data/newsletter_placements.csv")
-            uploaded_newsletter_file = st.file_uploader(
-                "Upload latest CSV or Excel",
-                type=["csv", "xlsx", "xls"],
-                key="hubspot_newsletter_upload",
-            )
+    use_lead_gen_sheet = st.checkbox("Pull lead gen sheet data", value=True, key="pull_lead_gen_sheet")
 
     try:
         if use_gam_data and has_gam_advertiser_id:
@@ -1286,23 +1467,20 @@ with st.sidebar:
     campaign_id, campaign_name = campaign_lookup[selected_campaign]
     run_report = st.button("Run report", type="primary", use_container_width=True)
 
+render_advertiser_source_editor(advertisers)
+
 manual_data = collect_manual_data()
 hubspot_newsletter_placements: pd.DataFrame | None = None
-newsletter_file_key = "default"
-if uploaded_newsletter_file is not None:
+newsletter_file_key = "master-sheet"
+if use_hubspot_email:
     try:
-        uploaded_newsletter_file.seek(0)
-        raw_newsletter_placements = read_uploaded_placement_file(uploaded_newsletter_file)
-        hubspot_newsletter_placements = raw_newsletter_placements
-        normalized_preview = normalize_placement_frame(raw_newsletter_placements)
-        newsletter_file_key = f"upload:{uploaded_newsletter_file.name}:{uploaded_newsletter_file.size}"
-        st.sidebar.caption(f"Using uploaded eNewsletter file: {len(normalized_preview):,} placement rows")
+        hubspot_newsletter_placements = cached_enewsletter_placements()
+        normalized_preview = normalize_placement_frame(hubspot_newsletter_placements)
+        newsletter_file_key = f"master-sheet:{len(normalized_preview)}"
+        st.sidebar.caption(f"Using 2026 eNewsletter Ads tab: {len(normalized_preview):,} placement rows")
     except Exception as exc:
-        st.sidebar.error(f"Could not read uploaded eNewsletter file: {exc}")
-        st.stop()
-elif (BASE_DIR / "eNewsletter Ad Metrics.csv").exists():
-    default_stat = (BASE_DIR / "eNewsletter Ad Metrics.csv").stat()
-    newsletter_file_key = f"default:eNewsletter Ad Metrics.csv:{default_stat.st_mtime_ns}"
+        st.sidebar.error(f"Could not read 2026 eNewsletter Ads tab: {exc}")
+        hubspot_newsletter_placements = pd.DataFrame()
 
 report_key = (
     str(selected.get("advertiser_id")),
@@ -1314,6 +1492,7 @@ report_key = (
     str(use_gam_data),
     str(use_webinar_api),
     str(use_hubspot_email),
+    str(use_lead_gen_sheet),
     newsletter_file_key,
 )
 
@@ -1361,36 +1540,22 @@ webinar_frame = _empty_webinar_frame()
 webinar_status = ""
 if use_webinar_api:
     try:
-        with st.spinner("Loading Webinar.net data..."):
-            all_webinars = cached_webinars(
-                advertiser_name=str(selected["advertiser_name"]),
-                match_text="",
-                start_date=start_date,
-                end_date=end_date,
-                cache_version=WEBINAR_API_CACHE_VERSION,
-            )
-        try:
-            with st.spinner("Matching webinars by sponsor..."):
-                listing_frame = cached_webinar_listing(WEBINAR_LISTING_CACHE_VERSION)
-                webinar_frame = match_webinars_from_listing(
-                    all_webinars,
-                    listing_frame,
-                    str(selected["advertiser_name"]),
-                )
-        except WebinarListingError as exc:
-            st.warning(f"Advanced Manufacturing webinar listing could not be used: {exc}")
-            webinar_frame = _empty_webinar_frame()
-
-        if webinar_frame.empty and webinar_match_text:
-            searchable = all_webinars["webinar_match_text"].fillna("").str.lower()
-            webinar_frame = all_webinars[
-                searchable.str.contains(webinar_match_text.lower(), regex=False)
-            ].copy()
+        with st.spinner("Loading webinar sheet data..."):
+            webinar_frame = cached_webinars_from_sheet(str(selected["advertiser_name"]), start_date, end_date)
         if webinar_frame.empty:
-            webinar_status = "No Webinar.net webinars matched this advertiser and date range."
-    except WebinarNetConfigError as exc:
+            webinar_status = "No webinars matched this advertiser and date range in the 2026 Webinars tab."
+    except Exception as exc:
         webinar_status = str(exc)
         st.warning(webinar_status)
+
+if use_lead_gen_sheet:
+    try:
+        lead_gen_frame = cached_lead_gen(str(selected["advertiser_name"]), start_date, end_date)
+    except Exception as exc:
+        st.warning(f"Lead Gen sheet data could not be loaded: {exc}")
+        lead_gen_frame = pd.DataFrame()
+else:
+    lead_gen_frame = pd.DataFrame()
 
 email_ads = prepare_email_frame(hubspot_enewsletter, hubspot_custom_email)
 
@@ -1412,7 +1577,7 @@ creative_summary["ctr"] = creative_summary["ad_clicks"] / creative_summary["ad_i
 creative_summary["ctr"] = creative_summary["ctr"].fillna(0)
 creative_summary = creative_summary.sort_values("ad_impressions", ascending=False, ignore_index=True)
 
-available_pdf_elements = available_report_elements(gam_ads, webinar_frame, email_ads, manual_data)
+available_pdf_elements = available_report_elements(gam_ads, webinar_frame, email_ads, lead_gen_frame, manual_data)
 unavailable_chart_elements = set()
 if not multiple_dates(gam_ads, "date"):
     unavailable_chart_elements.update(["chart_daily_delivery", "chart_daily_ctr"])
@@ -1640,7 +1805,7 @@ if not gam_ads.empty:
 
 st.subheader("Webinars")
 if webinar_frame.empty:
-    st.info(webinar_status or "No Webinar.net webinars matched this advertiser and date range.")
+    st.info(webinar_status or "No webinar rows matched this advertiser and date range in the master metrics sheet.")
 else:
     webinar_registrations = int(webinar_frame["registrations"].sum())
     webinar_kpi_col, _ = st.columns([1, 4])
@@ -1717,9 +1882,34 @@ render_hubspot_email_section(
     manual_data,
 )
 
+st.subheader("Lead Gen")
+if lead_gen_frame.empty:
+    st.info("No lead gen rows matched this advertiser and date range in the 2026 Lead Gen tab.")
+else:
+    lead_goal = int(pd.to_numeric(lead_gen_frame["lead_goal"], errors="coerce").fillna(0).sum())
+    leads_received = int(pd.to_numeric(lead_gen_frame["leads_received"], errors="coerce").fillna(0).sum())
+    leads_remaining = int(pd.to_numeric(lead_gen_frame["leads_remaining"], errors="coerce").fillna(0).sum())
+    lead_cols = st.columns(3)
+    with lead_cols[0]:
+        selectable_metric("kpi_lead_goal", "Lead goal", format_integer(lead_goal))
+    with lead_cols[1]:
+        selectable_metric("kpi_leads_received", "Leads received", format_integer(leads_received))
+    with lead_cols[2]:
+        selectable_metric("kpi_leads_remaining", "Leads remaining", format_integer(leads_remaining))
+
+    element_header("Lead Gen Detail", "table_lead_gen")
+    render_if_selected(
+        "table_lead_gen",
+        lambda: st.dataframe(lead_gen_detail_table(lead_gen_frame), use_container_width=True, hide_index=True),
+    )
+
 st.subheader("Manual Entries")
 for manual_element_id in [
+    "manual_website_ads",
+    "manual_webinars",
+    "manual_enewsletter_entry",
     "manual_retargeting",
+    "manual_custom_email_entry",
     "manual_lead_gen",
 ]:
     render_manual_section(manual_element_id, manual_data)
@@ -1732,18 +1922,23 @@ pdf_manual_data = dict(manual_data)
 st.markdown('<div class="section-label">PDF Export</div>', unsafe_allow_html=True)
 st.caption(f"{len(selected_pdf_elements)} of {len(REPORT_ELEMENTS)} report elements selected.")
 try:
+    pdf_kwargs = {
+        "advertiser_name": str(selected["advertiser_name"]),
+        "start_date": start_date,
+        "end_date": end_date,
+        "campaign_name": campaign_name,
+        "gam_ads": gam_ads,
+        "webinar_data": webinar_frame,
+        "creative_assets": image_creatives,
+        "hubspot_email_data": email_ads,
+        "manual_data": pdf_manual_data,
+        "logo_path": LOGO_PATH,
+        "elements": selected_pdf_elements or ["kpi_impressions"],
+    }
+    if "lead_gen_data" in inspect.signature(build_pdf_report).parameters:
+        pdf_kwargs["lead_gen_data"] = lead_gen_frame
     pdf_bytes = build_pdf_report(
-        advertiser_name=str(selected["advertiser_name"]),
-        start_date=start_date,
-        end_date=end_date,
-        campaign_name=campaign_name,
-        gam_ads=gam_ads,
-        webinar_data=webinar_frame,
-        creative_assets=image_creatives,
-        hubspot_email_data=email_ads,
-        manual_data=pdf_manual_data,
-        logo_path=LOGO_PATH,
-        elements=selected_pdf_elements or ["kpi_impressions"],
+        **pdf_kwargs,
     )
     st.download_button(
         "Download PDF report",

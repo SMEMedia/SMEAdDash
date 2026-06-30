@@ -52,6 +52,6 @@ categories:
   lead_gen:
     label: Lead Gen
     source: Anteriad
-    status: planned
+    status: live
     metrics:
       - leads_received

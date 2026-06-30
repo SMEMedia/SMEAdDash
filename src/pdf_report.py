@@ -33,6 +33,7 @@ def build_pdf_report(
     logo_path: Path | None = None,
     creative_assets: pd.DataFrame | None = None,
     hubspot_email_data: pd.DataFrame | None = None,
+    lead_gen_data: pd.DataFrame | None = None,
     manual_data: dict[str, dict[str, Any]] | None = None,
     sections: list[str] | None = None,
     elements: list[str] | None = None,
@@ -136,6 +137,7 @@ def build_pdf_report(
     prepared = _prepare_frame(gam_ads)
     webinar_frame = _prepare_webinar_frame(webinar_data)
     email_frame = _prepare_email_frame(hubspot_email_data)
+    lead_gen_frame = _prepare_lead_gen_frame(lead_gen_data)
     totals = _totals(prepared)
     campaign_summary = _campaign_summary(prepared)
     creative_summary = _creative_summary(prepared)
@@ -215,9 +217,24 @@ def build_pdf_report(
         if email_table_keys:
             story.append(_email_table(email_frame, email_table_keys))
 
+    lead_metric_keys = [
+        key for key in ["kpi_lead_goal", "kpi_leads_received", "kpi_leads_remaining"]
+        if key in selected_elements
+    ]
+    if not lead_gen_frame.empty and (lead_metric_keys or "table_lead_gen" in selected_elements):
+        story.append(Paragraph("Lead Gen", styles["Section"]))
+        if lead_metric_keys:
+            story.append(_metric_table(styles, _lead_gen_totals(lead_gen_frame), lead_metric_keys))
+        if "table_lead_gen" in selected_elements:
+            story.append(_lead_gen_table(lead_gen_frame))
+
     manual_keys = [
         key for key in [
+            "manual_website_ads",
+            "manual_webinars",
+            "manual_enewsletter_entry",
             "manual_retargeting",
+            "manual_custom_email_entry",
             "manual_lead_gen",
         ]
         if key in selected_elements
@@ -444,6 +461,62 @@ def _email_table(frame: pd.DataFrame, table_keys: list[str]):
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("TOPPADDING", (0, 0), (-1, -1), 3),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    return table
+
+
+def _lead_gen_table(frame: pd.DataFrame):
+    from reportlab.lib import colors
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import inch
+    from reportlab.platypus import Paragraph, Table, TableStyle
+
+    styles = getSampleStyleSheet()
+    header_style = ParagraphStyle(
+        "LeadGenTableHeader",
+        parent=styles["BodyText"],
+        textColor=colors.white,
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+    )
+    rows = [
+        [
+            Paragraph("Advertiser", header_style),
+            Paragraph("Start", header_style),
+            Paragraph("End", header_style),
+            Paragraph("Goal", header_style),
+            Paragraph("Received", header_style),
+            Paragraph("Remaining", header_style),
+        ]
+    ]
+    for _, row in frame.head(24).iterrows():
+        rows.append(
+            [
+                Paragraph(escape(str(row.get("advertiser_name", ""))), styles["BodyText"]),
+                Paragraph(escape(str(row.get("start_date_label", ""))), styles["BodyText"]),
+                Paragraph(escape(str(row.get("end_date_label", ""))), styles["BodyText"]),
+                Paragraph(f"{int(float(row.get('lead_goal', 0))):,}", styles["BodyText"]),
+                Paragraph(f"{int(float(row.get('leads_received', 0))):,}", styles["BodyText"]),
+                Paragraph(f"{int(float(row.get('leads_remaining', 0))):,}", styles["BodyText"]),
+            ]
+        )
+
+    table = Table(rows, colWidths=[2.0 * inch, 0.85 * inch, 0.85 * inch, 0.85 * inch, 0.95 * inch, 0.95 * inch], repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), _color("blue")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
+                ("GRID", (0, 0), (-1, -1), 0.35, _color("gray")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, _color("pale_blue")]),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
             ]
         )
     )
@@ -887,6 +960,45 @@ def _email_totals(frame: pd.DataFrame) -> list[tuple[str, str, str]]:
     ]
 
 
+def _prepare_lead_gen_frame(frame: pd.DataFrame | None) -> pd.DataFrame:
+    if frame is None or frame.empty:
+        return pd.DataFrame(
+            columns=[
+                "advertiser_name",
+                "start_date",
+                "end_date",
+                "start_date_label",
+                "end_date_label",
+                "lead_goal",
+                "leads_received",
+                "leads_remaining",
+            ]
+        )
+    prepared = frame.copy()
+    for column in ["lead_goal", "leads_received", "leads_remaining"]:
+        if column not in prepared.columns:
+            prepared[column] = 0
+        prepared[column] = pd.to_numeric(prepared[column], errors="coerce").fillna(0)
+    prepared["start_date"] = pd.to_datetime(prepared.get("start_date", ""), errors="coerce")
+    prepared["end_date"] = pd.to_datetime(prepared.get("end_date", ""), errors="coerce")
+    prepared["start_date_label"] = prepared["start_date"].dt.strftime("%Y-%m-%d").fillna("")
+    prepared["end_date_label"] = prepared["end_date"].dt.strftime("%Y-%m-%d").fillna("")
+    if "advertiser_name" not in prepared.columns:
+        prepared["advertiser_name"] = ""
+    return prepared
+
+
+def _lead_gen_totals(frame: pd.DataFrame) -> list[tuple[str, str, str]]:
+    lead_goal = float(frame["lead_goal"].sum()) if not frame.empty else 0
+    leads_received = float(frame["leads_received"].sum()) if not frame.empty else 0
+    leads_remaining = float(frame["leads_remaining"].sum()) if not frame.empty else 0
+    return [
+        ("kpi_lead_goal", "Lead goal", f"{int(lead_goal):,}"),
+        ("kpi_leads_received", "Leads received", f"{int(leads_received):,}"),
+        ("kpi_leads_remaining", "Leads remaining", f"{int(leads_remaining):,}"),
+    ]
+
+
 def _prepare_frame(frame: pd.DataFrame) -> pd.DataFrame:
     prepared = frame.copy()
     if prepared.empty:
@@ -967,6 +1079,8 @@ def _elements_from_sections(sections: set[str]) -> list[str]:
             "manual_enewsletter",
             "manual_custom_email",
         ])
+    if "lead_gen" in sections or "Lead Gen" in sections:
+        elements.extend(["kpi_lead_goal", "kpi_leads_received", "kpi_leads_remaining", "table_lead_gen"])
     if "detail" in sections:
         elements.append("table_campaign_detail")
     if "creative_detail" in sections:
