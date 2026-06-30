@@ -1,93 +1,108 @@
-advertiser_id,advertiser_name,gam_advertiser_id,gam_advertiser_name,gam_company_type,gam_credit_status,source_system,utm_source,utm_medium,utm_campaign,landing_page_contains,notes
-6072497511,3Dnatives,6072497511,SMES - advancedmanufacturing.org - YUP - 3Dnatives,ADVERTISER,ACTIVE,GAM,,,,,
-5748493096,ABM,5748493096,SMES - advancedmanufacturing.org - YUP - ABM,ADVERTISER,ACTIVE,GAM,,,,,
-6046818878,AMT,6046818878,SMES - advancedmanufacturing.org - YUP - AMT,ADVERTISER,ACTIVE,GAM,,,,,
-6067746899,Advanced Manufacturing Live,6067746899,SMES - advancedmanufacturing.org - YUP - Advanced Manufacturing Live,ADVERTISER,ACTIVE,GAM,,,,,
-5721756441,Advertiser Name,5721756441,SMES - advancedmanufacturing.org - YUP - Advertiser Name,ADVERTISER,ACTIVE,GAM,,,,,
-5774355302,AeroDef,5774355302,SMES - advancedmanufacturing.org - YUP - AeroDef,ADVERTISER,ACTIVE,GAM,,,,,
-5653985432,C-Flex Bearing,5653985432,SMES - advancedmanufacturing.org - YUP - C-Flex Bearing,ADVERTISER,ACTIVE,GAM,,,,,
-5939206747,CES,5939206747,SMES - advancedmanufacturing.org - YUP - CES,ADVERTISER,ACTIVE,GAM,,,,,
-5760218637,CPM Industrial Solutions,5760218637,SMES - advancedmanufacturing.org - YUP - CPM Industrial Solutions,ADVERTISER,ACTIVE,GAM,,,,,
-5632914451,Castrol,5632914451,SMES - advancedmanufacturing.org - YUP - Castrol,ADVERTISER,ACTIVE,GAM,,,,,
-6009890783,Ceratizit,6009890783,SMES - advancedmanufacturing.org - YUP - Ceratizit,ADVERTISER,ACTIVE,GAM,,,,,
-6084171587,DMG MORI,6084171587,SMES - advancedmanufacturing.org - YUP - DMG MORI,ADVERTISER,ACTIVE,GAM,,,,,
-5652049604,"Demark (Wuhan) Technology Co.,Ltd",5652049604,"SMES - advancedmanufacturing.org - YUP - Demark (Wuhan) Technology Co.,Ltd",ADVERTISER,ACTIVE,GAM,,,,,
-5626774282,Emuge,5626774282,SMES - advancedmanufacturing.org - YUP - Emuge,ADVERTISER,ACTIVE,GAM,,,,,
-5639144639,FABTECH,5639144639,SMES - advancedmanufacturing.org - YUP - FABTECH,ADVERTISER,ACTIVE,GAM,,,,,
-5626536121,FABTECH Canada,5626536121,SMES - advancedmanufacturing.org - YUP - FABTECH Canada,ADVERTISER,ACTIVE,GAM,,,,,
-5748598552,Forging Industry Association,5748598552,SMES - advancedmanufacturing.org - YUP - Forging Industry Association,ADVERTISER,ACTIVE,GAM,,,,,
-5654123485,Fortium,5654123485,SMES - advancedmanufacturing.org - YUP - Fortium,ADVERTISER,ACTIVE,GAM,,,,,
-6038023088,GROB,6038023088,SMES - advancedmanufacturing.org - YUP - GROB,ADVERTISER,ACTIVE,GAM,,,,,
-5638632869,GWS,5638632869,SMES - advancedmanufacturing.org - YUP - GWS,ADVERTISER,ACTIVE,GAM,,,,,
-6021798699,Generon,6021798699,SMES - advancedmanufacturing.org - YUP - Generon,ADVERTISER,ACTIVE,GAM,,,,,
-6081200077,Greenerd Press & Machine,6081200077,SMES - advancedmanufacturing.org - YUP - Greenerd Press & Machine,ADVERTISER,ACTIVE,GAM,,,,,
-6063034782,Hubbell,6063034782,SMES - advancedmanufacturing.org - YUP - Hubbell,ADVERTISER,ACTIVE,GAM,,,,,
-5626773763,IMCO Carbide,5626773763,SMES - advancedmanufacturing.org - YUP - IMCO Carbide,ADVERTISER,ACTIVE,GAM,,,,,
-6072478229,IMTS,6072478229,SMES - advancedmanufacturing.org - YUP - IMTS,ADVERTISER,ACTIVE,GAM,,,,,
-5875688541,InfluxData,5875688541,SMES - advancedmanufacturing.org - YUP - InfluxData,ADVERTISER,ACTIVE,GAM,,,,,
-5626762074,Iscar,5626762074,SMES - advancedmanufacturing.org - YUP - Iscar,ADVERTISER,ACTIVE,GAM,,,,,
-5644034125,Liebherr,5644034125,SMES - advancedmanufacturing.org - YUP - Liebherr,ADVERTISER,ACTIVE,GAM,,,,,
-5781002071,Lien Sheng,5781002071,SMES - advancedmanufacturing.org - YUP - Lien Sheng,ADVERTISER,ACTIVE,GAM,,,,,
-5917864219,Limble,5917864219,SMES - advancedmanufacturing.org - YUP - Limble,ADVERTISER,ACTIVE,GAM,,,,,
-5626774543,Lithoz,5626774543,SMES - advancedmanufacturing.org - YUP - Lithoz,ADVERTISER,ACTIVE,GAM,,,,,
-5808470776,Manufacturing Engineering & Technology,5808470776,SMES - advancedmanufacturing.org - YUP - Manufacturing Engineering & Technology,ADVERTISER,ACTIVE,GAM,,,,,
-5640866055,Manufacturing Engineering Magazine,5640866055,SMES - advancedmanufacturing.org - YUP - Manufacturing Engineering Magazine,ADVERTISER,ACTIVE,GAM,,,,,
-5803468008,Manufacturing Technology Series,5803468008,SMES - advancedmanufacturing.org - YUP - Manufacturing Technology Series,ADVERTISER,ACTIVE,GAM,,,,,
-5978390817,Mastercam,5978390817,SMES - advancedmanufacturing.org - YUP - Mastercam,ADVERTISER,ACTIVE,GAM,,,,,
-5722698662,Methods Machine,5722698662,SMES - advancedmanufacturing.org - YUP - Methods Machine,ADVERTISER,ACTIVE,GAM,,,,,
-5627043094,NORDSON,5627043094,SMES - advancedmanufacturing.org - YUP - NORDSON,ADVERTISER,ACTIVE,GAM,,,,,
-5920215347,Norton Saint-Gobain Abrasives,5920215347,SMES - advancedmanufacturing.org - YUP - Norton Saint-Gobain Abrasives,ADVERTISER,ACTIVE,GAM,,,,,
-6060214692,OPEN MIND,6060214692,SMES - advancedmanufacturing.org - YUP - OPEN MIND,ADVERTISER,ACTIVE,GAM,,,,,
-5748669332,OSG,5748669332,SMES - advancedmanufacturing.org - YUP - OSG,ADVERTISER,ACTIVE,GAM,,,,,
-5852565355,Orion,5852565355,SMES - advancedmanufacturing.org - YUP - Orion,ADVERTISER,ACTIVE,GAM,,,,,
-5730911679,PrecisionX,5730911679,SMES - advancedmanufacturing.org - YUP - PrecisionX,ADVERTISER,ACTIVE,GAM,,,,,
-5626761777,Prima Power,5626761777,SMES - advancedmanufacturing.org - YUP - Prima Power,ADVERTISER,ACTIVE,GAM,,,,,
-5639312391,Prima Power Laserdyne,5639312391,SMES - advancedmanufacturing.org - YUP - Prima Power Laserdyne,ADVERTISER,ACTIVE,GAM,,,,,
-5770406156,RAPID + TCT,5770406156,SMES - advancedmanufacturing.org - YUP - RAPID + TCT,ADVERTISER,ACTIVE,GAM,,,,,
-5858726107,RBT,5858726107,SMES - advancedmanufacturing.org - YUP - RBT,ADVERTISER,ACTIVE,GAM,,,,,
-5654079759,Real Time Automation,5654079759,SMES - advancedmanufacturing.org - YUP - Real Time Automation,ADVERTISER,ACTIVE,GAM,,,,,
-5749032614,SME 30 Under 30,5749032614,SMES - advancedmanufacturing.org - YUP - SME 30 Under 30,ADVERTISER,ACTIVE,GAM,,,,,
-5953653747,SME AM Awards,5953653747,SMES - advancedmanufacturing.org - YUP - SME AM Awards,ADVERTISER,ACTIVE,GAM,,,,,
-5759560248,SME Media AMN Podcast,5759560248,SMES - advancedmanufacturing.org - YUP - SME Media AMN Podcast,ADVERTISER,ACTIVE,GAM,,,,,
-5650630779,SME Media App,5650630779,SMES - advancedmanufacturing.org - YUP - SME Media App,ADVERTISER,ACTIVE,GAM,,,,,
-5753213473,SME Media Lead Gen,5753213473,SMES - advancedmanufacturing.org - YUP - SME Media Lead Gen,ADVERTISER,ACTIVE,GAM,,,,,
-5835574985,SME Media Newsletter,5835574985,SMES - advancedmanufacturing.org - YUP - SME Media Newsletter,ADVERTISER,ACTIVE,GAM,,,,,
-5762122237,SME Media Webinars,5762122237,SMES - advancedmanufacturing.org - YUP - SME Media Webinars,ADVERTISER,ACTIVE,GAM,,,,,
-5661318408,SME Membership,5661318408,SMES - advancedmanufacturing.org - YUP - SME Membership,ADVERTISER,ACTIVE,GAM,,,,,
-5935382331,SMU Lyle School of Engineering,5935382331,SMES - advancedmanufacturing.org - YUP - SMU Lyle School of Engineering,ADVERTISER,ACTIVE,GAM,,,,,
-5907940248,Shell Lubricants,5907940248,SMES - advancedmanufacturing.org - YUP - Shell Lubricants,ADVERTISER,ACTIVE,GAM,,,,,
-5648035847,Smart Manufacturing Magazine,5648035847,SMES - advancedmanufacturing.org - YUP - Smart Manufacturing Magazine,ADVERTISER,ACTIVE,GAM,,,,,
-5794516036,Sprague,5794516036,SMES - advancedmanufacturing.org - YUP - Sprague,ADVERTISER,ACTIVE,GAM,,,,,
-5953608653,Starrett,5953608653,SMES - advancedmanufacturing.org - YUP - Starrett,ADVERTISER,ACTIVE,GAM,,,,,
-5890082798,Surface Solutions,5890082798,SMES - advancedmanufacturing.org - YUP - Surface Solutions,ADVERTISER,ACTIVE,GAM,,,,,
-5856137913,TAITRA,5856137913,SMES - advancedmanufacturing.org - YUP - TAITRA,ADVERTISER,ACTIVE,GAM,,,,,
-5661024372,TyTek Industries,5661024372,SMES - advancedmanufacturing.org - YUP - TyTek Industries,ADVERTISER,ACTIVE,GAM,,,,,
-6010304799,UPG,6010304799,SMES - advancedmanufacturing.org - YUP - UPG,ADVERTISER,ACTIVE,GAM,,,,,
-5626627400,US Shell Lubricants,5626627400,SMES - advancedmanufacturing.org - YUP - US Shell Lubricants,ADVERTISER,ACTIVE,GAM,,,,,
-5875692368,University of Michigan Engineering Online,5875692368,SMES - advancedmanufacturing.org - YUP - University of Michigan Engineering Online,ADVERTISER,ACTIVE,GAM,,,,,
-6032218920,Voltera,6032218920,SMES - advancedmanufacturing.org - YUP - Voltera,ADVERTISER,ACTIVE,GAM,,,,,
-5626774744,Wahlers,5626774744,SMES - advancedmanufacturing.org - YUP - Wahlers,ADVERTISER,ACTIVE,GAM,,,,,
-6079352110,ZEISS,6079352110,SMES - advancedmanufacturing.org - YUP - ZEISS,ADVERTISER,ACTIVE,GAM,,,,,
-5770042545,"pL Lehmann America, Inc",5770042545,"SMES - advancedmanufacturing.org - YUP - pL Lehmann America, Inc",ADVERTISER,ACTIVE,GAM,,,,,
-webinar_ampower,AMPower,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_boast,Boast,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_caddi,CADDi,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_cadonix,Cadonix,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_civan_lasers,Civan Lasers,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_cymanii,CyManII,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_deltek,Deltek,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_discus,DISCUS,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_discus_software,Discus Software,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_drive_aluminum,Drive Aluminum,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_eci,ECI,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_epson,EPSON,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_greenleaf,Greenleaf,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_hp_additive_manufacturing_solutions,HP Additive Manufacturing Solutions,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_kaishan_usa,Kaishan USA,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_lumivero,Lumivero,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_origami_risk,Origami Risk,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_protolabs,Protolabs,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_sagemont,Sagemont,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_scientific_cutting_tools,Scientific Cutting Tools,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_sme_technical_activities,SME Technical Activities,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
-webinar_tdk_sensei,TDK SensEI,,,,,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+advertiser_id,advertiser_name,gam_advertiser_id,gam_advertiser_name,gam_company_type,gam_credit_status,gam,webinar,email,source_system,utm_source,utm_medium,utm_campaign,landing_page_contains,notes
+6072497511,3Dnatives,6072497511,SMES - advancedmanufacturing.org - YUP - 3Dnatives,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_43north,43North,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+5748493096,ABM,5748493096,SMES - advancedmanufacturing.org - YUP - ABM,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+6067746899,Advanced Manufacturing Live,6067746899,SMES - advancedmanufacturing.org - YUP - Advanced Manufacturing Live,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5721756441,Advertiser Name,5721756441,SMES - advancedmanufacturing.org - YUP - Advertiser Name,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5774355302,AeroDef,5774355302,SMES - advancedmanufacturing.org - YUP - AeroDef,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_ampower,AMPower,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+6046818878,AMT,6046818878,SMES - advancedmanufacturing.org - YUP - AMT,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_boast,Boast,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5653985432,C-Flex Bearing,5653985432,SMES - advancedmanufacturing.org - YUP - C-Flex Bearing,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_caddi,CADDi,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+webinar_cadonix,Cadonix,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5632914451,Castrol,5632914451,SMES - advancedmanufacturing.org - YUP - Castrol,ADVERTISER,ACTIVE,true,true,true,GAM,,,,,
+6009890783,Ceratizit,6009890783,SMES - advancedmanufacturing.org - YUP - Ceratizit,ADVERTISER,ACTIVE,true,true,false,GAM,,,,,
+5939206747,CES,5939206747,SMES - advancedmanufacturing.org - YUP - CES,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_citgo_petroleum,CITGO Petroleum Corporation,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+webinar_civan_lasers,Civan Lasers,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5760218637,CPM Industrial Solutions,5760218637,SMES - advancedmanufacturing.org - YUP - CPM Industrial Solutions,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_cymanii,CyManII,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+webinar_deltek,Deltek,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5652049604,"Demark (Wuhan) Technology Co.,Ltd",5652049604,"SMES - advancedmanufacturing.org - YUP - Demark (Wuhan) Technology Co.,Ltd",ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_designfusion,Designfusion,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+webinar_discus,DISCUS,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+webinar_discus_software,Discus Software,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+6084171587,DMG MORI,6084171587,SMES - advancedmanufacturing.org - YUP - DMG MORI,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_drive_aluminum,Drive Aluminum,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+webinar_eci,ECI,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5626774282,Emuge,5626774282,SMES - advancedmanufacturing.org - YUP - Emuge,ADVERTISER,ACTIVE,true,false,true,GAM,,,,,
+webinar_epson,EPSON,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5639144639,FABTECH,5639144639,SMES - advancedmanufacturing.org - YUP - FABTECH,ADVERTISER,ACTIVE,true,false,true,GAM,,,,,
+5626536121,FABTECH Canada,5626536121,SMES - advancedmanufacturing.org - YUP - FABTECH Canada,ADVERTISER,ACTIVE,true,false,true,GAM,,,,,
+5748598552,Forging Industry Association,5748598552,SMES - advancedmanufacturing.org - YUP - Forging Industry Association,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5654123485,Fortium,5654123485,SMES - advancedmanufacturing.org - YUP - Fortium,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_garnter_digital_markets,Garnter Digital Markets,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+enewsletter_gartner_digital_markets,Gartner Digital Markets,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+6021798699,Generon,6021798699,SMES - advancedmanufacturing.org - YUP - Generon,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+6081200077,Greenerd Press & Machine,6081200077,SMES - advancedmanufacturing.org - YUP - Greenerd Press & Machine,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_greenleaf,Greenleaf,,,,,false,true,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+6038023088,GROB,6038023088,SMES - advancedmanufacturing.org - YUP - GROB,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5638632869,GWS,5638632869,SMES - advancedmanufacturing.org - YUP - GWS,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_hp_additive_manufacturing_solutions,HP Additive Manufacturing Solutions,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+6063034782,Hubbell,6063034782,SMES - advancedmanufacturing.org - YUP - Hubbell,ADVERTISER,ACTIVE,true,false,true,GAM,,,,,
+5626773763,IMCO Carbide,5626773763,SMES - advancedmanufacturing.org - YUP - IMCO Carbide,ADVERTISER,ACTIVE,true,false,true,GAM,,,,,
+6072478229,IMTS,6072478229,SMES - advancedmanufacturing.org - YUP - IMTS,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5875688541,InfluxData,5875688541,SMES - advancedmanufacturing.org - YUP - InfluxData,ADVERTISER,ACTIVE,true,true,false,GAM,,,,,
+5626762074,Iscar,5626762074,SMES - advancedmanufacturing.org - YUP - Iscar,ADVERTISER,ACTIVE,true,true,false,GAM,,,,,
+webinar_kaishan_usa,Kaishan USA,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5644034125,Liebherr,5644034125,SMES - advancedmanufacturing.org - YUP - Liebherr,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5781002071,Lien Sheng,5781002071,SMES - advancedmanufacturing.org - YUP - Lien Sheng,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5917864219,Limble,5917864219,SMES - advancedmanufacturing.org - YUP - Limble,ADVERTISER,ACTIVE,true,true,false,GAM,,,,,
+5626774543,Lithoz,5626774543,SMES - advancedmanufacturing.org - YUP - Lithoz,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_lumivero,Lumivero,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5808470776,Manufacturing Engineering & Technology,5808470776,SMES - advancedmanufacturing.org - YUP - Manufacturing Engineering & Technology,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5640866055,Manufacturing Engineering Magazine,5640866055,SMES - advancedmanufacturing.org - YUP - Manufacturing Engineering Magazine,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5803468008,Manufacturing Technology Series,5803468008,SMES - advancedmanufacturing.org - YUP - Manufacturing Technology Series,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_marposs,Marposs,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+5978390817,Mastercam,5978390817,SMES - advancedmanufacturing.org - YUP - Mastercam,ADVERTISER,ACTIVE,true,true,false,GAM,,,,,
+enewsletter_met,MET,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+5722698662,Methods Machine,5722698662,SMES - advancedmanufacturing.org - YUP - Methods Machine,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5627043094,NORDSON,5627043094,SMES - advancedmanufacturing.org - YUP - NORDSON,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5920215347,Norton Saint-Gobain Abrasives,5920215347,SMES - advancedmanufacturing.org - YUP - Norton Saint-Gobain Abrasives,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+6060214692,OPEN MIND,6060214692,SMES - advancedmanufacturing.org - YUP - OPEN MIND,ADVERTISER,ACTIVE,true,false,true,GAM,,,,,
+webinar_origami_risk,Origami Risk,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5852565355,Orion,5852565355,SMES - advancedmanufacturing.org - YUP - Orion,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5748669332,OSG,5748669332,SMES - advancedmanufacturing.org - YUP - OSG,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_phillips,Phillips,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+5770042545,"pL Lehmann America, Inc",5770042545,"SMES - advancedmanufacturing.org - YUP - pL Lehmann America, Inc",ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5730911679,PrecisionX,5730911679,SMES - advancedmanufacturing.org - YUP - PrecisionX,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5626761777,Prima Power,5626761777,SMES - advancedmanufacturing.org - YUP - Prima Power,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5639312391,Prima Power Laserdyne,5639312391,SMES - advancedmanufacturing.org - YUP - Prima Power Laserdyne,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_protolabs,Protolabs,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5770406156,RAPID + TCT,5770406156,SMES - advancedmanufacturing.org - YUP - RAPID + TCT,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5858726107,RBT,5858726107,SMES - advancedmanufacturing.org - YUP - RBT,ADVERTISER,ACTIVE,true,true,false,GAM,,,,,
+5654079759,Real Time Automation,5654079759,SMES - advancedmanufacturing.org - YUP - Real Time Automation,ADVERTISER,ACTIVE,true,false,true,GAM,,,,,
+enewsletter_remade_institute,REMADE Institute,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+enewsletter_renishaw,Renishaw,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+webinar_sagemont,Sagemont,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+enewsletter_scientific_cutting_tools,Scientific Cutting Tools,,,,,false,true,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+5907940248,Shell Lubricants,5907940248,SMES - advancedmanufacturing.org - YUP - Shell Lubricants,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5648035847,Smart Manufacturing Magazine,5648035847,SMES - advancedmanufacturing.org - YUP - Smart Manufacturing Magazine,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5749032614,SME 30 Under 30,5749032614,SMES - advancedmanufacturing.org - YUP - SME 30 Under 30,ADVERTISER,ACTIVE,true,false,true,GAM,,,,,
+5953653747,SME AM Awards,5953653747,SMES - advancedmanufacturing.org - YUP - SME AM Awards,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5759560248,SME Media AMN Podcast,5759560248,SMES - advancedmanufacturing.org - YUP - SME Media AMN Podcast,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5650630779,SME Media App,5650630779,SMES - advancedmanufacturing.org - YUP - SME Media App,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5753213473,SME Media Lead Gen,5753213473,SMES - advancedmanufacturing.org - YUP - SME Media Lead Gen,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5835574985,SME Media Newsletter,5835574985,SMES - advancedmanufacturing.org - YUP - SME Media Newsletter,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5762122237,SME Media Webinars,5762122237,SMES - advancedmanufacturing.org - YUP - SME Media Webinars,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5661318408,SME Membership,5661318408,SMES - advancedmanufacturing.org - YUP - SME Membership,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_sme_technical_activities,SME Technical Activities,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+enewsletter_sme_webinars,SME Webinars,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+enewsletter_smu,SMU,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+5935382331,SMU Lyle School of Engineering,5935382331,SMES - advancedmanufacturing.org - YUP - SMU Lyle School of Engineering,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_solidworks,SOLIDWORKS,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+enewsletter_spectrum_advance,Spectrum Advance,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+5794516036,Sprague,5794516036,SMES - advancedmanufacturing.org - YUP - Sprague,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5953608653,Starrett,5953608653,SMES - advancedmanufacturing.org - YUP - Starrett,ADVERTISER,ACTIVE,true,true,false,GAM,,,,,
+5890082798,Surface Solutions,5890082798,SMES - advancedmanufacturing.org - YUP - Surface Solutions,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5856137913,TAITRA,5856137913,SMES - advancedmanufacturing.org - YUP - TAITRA,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+webinar_tdk_sensei,TDK SensEI,,,,,false,true,false,Webinar scrape,,,,,Added from Advanced Manufacturing webinar sponsor listing.
+5661024372,TyTek Industries,5661024372,SMES - advancedmanufacturing.org - YUP - TyTek Industries,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+enewsletter_unified_purchasing_group,Unified Purchasing Group,,,,,false,false,true,HubSpot eNewsletter CSV,,,,,Added from eNewsletter placement export.
+5875692368,University of Michigan Engineering Online,5875692368,SMES - advancedmanufacturing.org - YUP - University of Michigan Engineering Online,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+6010304799,UPG,6010304799,SMES - advancedmanufacturing.org - YUP - UPG,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5626627400,US Shell Lubricants,5626627400,SMES - advancedmanufacturing.org - YUP - US Shell Lubricants,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+6032218920,Voltera,6032218920,SMES - advancedmanufacturing.org - YUP - Voltera,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+5626774744,Wahlers,5626774744,SMES - advancedmanufacturing.org - YUP - Wahlers,ADVERTISER,ACTIVE,true,false,false,GAM,,,,,
+6079352110,ZEISS,6079352110,SMES - advancedmanufacturing.org - YUP - ZEISS,ADVERTISER,ACTIVE,true,true,false,GAM,,,,,

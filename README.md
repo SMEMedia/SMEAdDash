@@ -107,6 +107,41 @@ Each row can include:
 
 Use whichever identifiers match how advertiser campaigns are tagged today. The GA4 connector builds a combined filter from the populated fields.
 
+## HubSpot Email Performance
+
+Set your private app token in `.env`:
+
+```text
+HUBSPOT_ACCESS_TOKEN=pat-na1-...
+```
+
+The Streamlit app can pull Marketing Emails API performance for:
+
+- eNewsletter ads: matches placement dates for the selected advertiser to marketing email names like `MW m/dd/yy`. The default file is `data/newsletter_placements.csv`, falling back to `eNewsletter Ad Metrics.csv` in the project root. Users can also upload a newer CSV/XLSX file from the sidebar for a report run.
+- Custom emails: matches email titles containing `[Advertiser Name] Custom Email`, optionally enriched with rows in `data/custom_email_placements.csv`.
+
+Optional placement files can include `advertiser_id` or `advertiser_name`, plus a date column named `placement_date`, `date`, `newsletter_date`, or `send_date`. The eNewsletter export format with `Date`, `Delivered`, `Opened`, `Advertiser`, `Ad Type`, and `Clicks` is also supported; blank date/delivered/opened cells inherit the previous newsletter row.
+
+To add advertiser names from the eNewsletter placement export into `config/advertisers.csv`:
+
+```powershell
+python -m src.cli sync-enewsletter-advertisers --placements "eNewsletter Ad Metrics.csv"
+```
+
+Or include them when syncing webinar sponsors:
+
+```powershell
+python -m src.cli sync-webinar-sponsors --include-enewsletter
+```
+
+To enrich `config/advertisers.csv` from all configured advertiser sources at once:
+
+```powershell
+python -m src.cli enrich-advertisers --placements "eNewsletter Ad Metrics.csv"
+```
+
+This adds or updates `gam`, `webinar`, and `email` columns with `true`/`false` source flags.
+
 ## Streamlit App
 
 ```powershell

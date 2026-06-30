@@ -9,7 +9,7 @@ categories:
   enewsletter_ads:
     label: eNewsletter Ads
     source: HubSpot
-    status: planned
+    status: live
     metrics:
       - newsletters_delivered
       - newsletters_opened
@@ -19,7 +19,7 @@ categories:
   website_ads:
     label: Website Ads
     source: GAM and GA4
-    status: starter
+    status: live
     metrics:
       - ad_impressions
       - ad_clicks
@@ -42,7 +42,7 @@ categories:
   custom_email:
     label: Custom Email
     source: HubSpot
-    status: planned
+    status: live
     metrics:
       - total_delivered
       - total_opened

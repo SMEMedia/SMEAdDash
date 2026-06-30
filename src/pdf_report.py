@@ -32,6 +32,7 @@ def build_pdf_report(
     webinar_data: pd.DataFrame | None = None,
     logo_path: Path | None = None,
     creative_assets: pd.DataFrame | None = None,
+    hubspot_email_data: pd.DataFrame | None = None,
     manual_data: dict[str, dict[str, Any]] | None = None,
     sections: list[str] | None = None,
     elements: list[str] | None = None,
@@ -134,6 +135,7 @@ def build_pdf_report(
 
     prepared = _prepare_frame(gam_ads)
     webinar_frame = _prepare_webinar_frame(webinar_data)
+    email_frame = _prepare_email_frame(hubspot_email_data)
     totals = _totals(prepared)
     campaign_summary = _campaign_summary(prepared)
     creative_summary = _creative_summary(prepared)
@@ -181,11 +183,41 @@ def build_pdf_report(
         story.append(Paragraph("Image Creative Previews", styles["Section"]))
         story.extend(_image_creative_story(styles, creative_assets))
 
+    email_metric_keys = [
+        key for key in [
+            "kpi_email_delivered",
+            "kpi_email_opened",
+            "kpi_email_open_rate",
+            "kpi_email_clicks",
+            "kpi_email_click_rate",
+        ]
+        if key in selected_elements
+    ]
+    email_chart_keys = [
+        key for key in [
+            "chart_email_ad_type",
+            "chart_email_rates_ad_type",
+            "chart_email_time",
+            "chart_email_rates_time",
+        ]
+        if key in selected_elements
+    ]
+    email_table_keys = [
+        key for key in ["manual_enewsletter", "manual_custom_email"]
+        if key in selected_elements
+    ]
+    if not email_frame.empty and (email_metric_keys or email_chart_keys or email_table_keys):
+        story.append(Paragraph("HubSpot Email", styles["Section"]))
+        if email_metric_keys:
+            story.append(_metric_table(styles, _email_totals(email_frame), email_metric_keys))
+        if email_chart_keys:
+            story.extend(_email_visualization_story(email_frame, email_chart_keys))
+        if email_table_keys:
+            story.append(_email_table(email_frame, email_table_keys))
+
     manual_keys = [
         key for key in [
-            "manual_enewsletter",
             "manual_retargeting",
-            "manual_custom_email",
             "manual_lead_gen",
         ]
         if key in selected_elements
@@ -352,6 +384,72 @@ def _webinar_table(frame: pd.DataFrame):
     return table
 
 
+def _email_table(frame: pd.DataFrame, table_keys: list[str]):
+    from reportlab.lib import colors
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import inch
+    from reportlab.platypus import Paragraph, Table, TableStyle
+
+    styles = getSampleStyleSheet()
+    header_style = ParagraphStyle(
+        "EmailTableHeader",
+        parent=styles["BodyText"],
+        textColor=colors.white,
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+    )
+    selected_types = []
+    if "manual_enewsletter" in table_keys:
+        selected_types.append("eNewsletter Ad")
+    if "manual_custom_email" in table_keys:
+        selected_types.append("Custom Email")
+    body = frame[frame["report_type"].isin(selected_types)].copy() if selected_types else frame.copy()
+    rows = [
+        [
+            Paragraph("Type", header_style),
+            Paragraph("Date", header_style),
+            Paragraph("Ad Type", header_style),
+            Paragraph("Delivered", header_style),
+            Paragraph("Opened", header_style),
+            Paragraph("Clicks", header_style),
+            Paragraph("Open Rate", header_style),
+            Paragraph("Click Rate", header_style),
+        ]
+    ]
+    for _, row in body.head(24).iterrows():
+        rows.append(
+            [
+                Paragraph(escape(str(row.get("report_type", ""))), styles["BodyText"]),
+                Paragraph(escape(str(row.get("placement_date_label", ""))), styles["BodyText"]),
+                Paragraph(escape(str(row.get("ad_type", ""))), styles["BodyText"]),
+                Paragraph(f"{int(float(row.get('delivered', 0))):,}", styles["BodyText"]),
+                Paragraph(f"{int(float(row.get('opened', 0))):,}", styles["BodyText"]),
+                Paragraph(f"{int(float(row.get('clicks', 0))):,}", styles["BodyText"]),
+                Paragraph(f"{float(row.get('open_rate', 0)):.2%}", styles["BodyText"]),
+                Paragraph(f"{float(row.get('click_rate', 0)):.2%}", styles["BodyText"]),
+            ]
+        )
+
+    table = Table(rows, colWidths=[0.9 * inch, 0.75 * inch, 1.15 * inch, 0.8 * inch, 0.75 * inch, 0.65 * inch, 0.75 * inch, 0.75 * inch], repeatRows=1)
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), _color("blue")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 7),
+                ("GRID", (0, 0), (-1, -1), 0.35, _color("gray")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, _color("pale_blue")]),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    return table
+
+
 def _image_creative_story(styles, creative_assets: pd.DataFrame | None):
     from reportlab.lib import colors
     from reportlab.lib.units import inch
@@ -500,6 +598,114 @@ def _visualization_story(frame: pd.DataFrame, chart_keys: list[str]):
     return charts
 
 
+def _email_visualization_story(frame: pd.DataFrame, chart_keys: list[str]):
+    from reportlab.lib.units import inch
+    from reportlab.platypus import Image, Spacer
+
+    charts = []
+    metrics_ad_type = _email_metrics_by_ad_type_chart_image(frame) if "chart_email_ad_type" in chart_keys else None
+    if metrics_ad_type:
+        charts.extend([Image(metrics_ad_type, width=6.4 * inch, height=2.8 * inch), Spacer(1, 0.12 * inch)])
+
+    rates_ad_type = _email_rates_by_ad_type_chart_image(frame) if "chart_email_rates_ad_type" in chart_keys else None
+    if rates_ad_type:
+        charts.extend([Image(rates_ad_type, width=6.4 * inch, height=2.8 * inch), Spacer(1, 0.12 * inch)])
+
+    metrics_time = _email_metrics_over_time_chart_image(frame) if "chart_email_time" in chart_keys else None
+    if metrics_time:
+        charts.extend([Image(metrics_time, width=6.4 * inch, height=2.8 * inch), Spacer(1, 0.12 * inch)])
+
+    rates_time = _email_rates_over_time_chart_image(frame) if "chart_email_rates_time" in chart_keys else None
+    if rates_time:
+        charts.extend([Image(rates_time, width=6.4 * inch, height=2.8 * inch), Spacer(1, 0.12 * inch)])
+    return charts
+
+
+def _email_metrics_by_ad_type_chart_image(frame: pd.DataFrame):
+    summary = (
+        frame.groupby("ad_type", dropna=False)[["delivered", "opened", "clicks"]]
+        .sum()
+        .sort_values("delivered", ascending=False)
+    )
+    if summary.empty:
+        return None
+    fig, ax = _figure(height=3.0)
+    summary.plot(kind="bar", ax=ax, color=[BRAND["navy"], BRAND["teal"], BRAND["gold"]])
+    ax.set_title("Email Metrics by Ad Type", color=BRAND["navy"], weight="bold")
+    ax.set_xlabel("")
+    ax.set_ylabel("Count")
+    ax.tick_params(axis="x", rotation=25)
+    ax.legend(["Delivered", "Opened", "Clicks"], frameon=False)
+    return _fig_to_buffer(fig)
+
+
+def _email_rates_by_ad_type_chart_image(frame: pd.DataFrame):
+    summary = (
+        frame.groupby("ad_type", dropna=False)[["delivered", "opened", "clicks"]]
+        .sum()
+        .reset_index()
+        .sort_values("delivered", ascending=False)
+    )
+    if summary.empty:
+        return None
+    summary["open_rate"] = summary["opened"] / summary["delivered"].replace(0, pd.NA)
+    summary["click_rate"] = summary["clicks"] / summary["delivered"].replace(0, pd.NA)
+    summary[["open_rate", "click_rate"]] = summary[["open_rate", "click_rate"]].fillna(0)
+    fig, ax = _figure(height=3.0)
+    summary.set_index("ad_type")[["open_rate", "click_rate"]].plot(kind="bar", ax=ax, color=[BRAND["deep_teal"], BRAND["red"]])
+    ax.set_title("Email Rates by Ad Type", color=BRAND["navy"], weight="bold")
+    ax.set_xlabel("")
+    ax.set_ylabel("Rate")
+    ax.tick_params(axis="x", rotation=25)
+    ax.yaxis.set_major_formatter(lambda value, _: f"{value:.0%}")
+    ax.legend(["Open rate", "Click rate"], frameon=False)
+    return _fig_to_buffer(fig)
+
+
+def _email_metrics_over_time_chart_image(frame: pd.DataFrame):
+    summary = (
+        frame.dropna(subset=["placement_date"])
+        .groupby("placement_date", dropna=False)[["delivered", "opened", "clicks"]]
+        .sum()
+        .sort_index()
+    )
+    if summary.empty:
+        return None
+    fig, ax = _figure(height=3.0)
+    ax.plot(summary.index, summary["delivered"], color=BRAND["navy"], marker="o", label="Delivered")
+    ax.plot(summary.index, summary["opened"], color=BRAND["teal"], marker="o", label="Opened")
+    ax.plot(summary.index, summary["clicks"], color=BRAND["gold"], marker="o", label="Clicks")
+    ax.set_title("Email Metrics Over Time", color=BRAND["navy"], weight="bold")
+    ax.set_ylabel("Count")
+    ax.tick_params(axis="x", rotation=35)
+    ax.legend(frameon=False)
+    return _fig_to_buffer(fig)
+
+
+def _email_rates_over_time_chart_image(frame: pd.DataFrame):
+    summary = (
+        frame.dropna(subset=["placement_date"])
+        .groupby("placement_date", dropna=False)[["delivered", "opened", "clicks"]]
+        .sum()
+        .reset_index()
+        .sort_values("placement_date")
+    )
+    if summary.empty:
+        return None
+    summary["open_rate"] = summary["opened"] / summary["delivered"].replace(0, pd.NA)
+    summary["click_rate"] = summary["clicks"] / summary["delivered"].replace(0, pd.NA)
+    summary[["open_rate", "click_rate"]] = summary[["open_rate", "click_rate"]].fillna(0)
+    fig, ax = _figure(height=3.0)
+    ax.plot(summary["placement_date"], summary["open_rate"], color=BRAND["deep_teal"], marker="o", label="Open rate")
+    ax.plot(summary["placement_date"], summary["click_rate"], color=BRAND["red"], marker="o", label="Click rate")
+    ax.set_title("Email Rates Over Time", color=BRAND["navy"], weight="bold")
+    ax.set_ylabel("Rate")
+    ax.tick_params(axis="x", rotation=35)
+    ax.yaxis.set_major_formatter(lambda value, _: f"{value:.0%}")
+    ax.legend(frameon=False)
+    return _fig_to_buffer(fig)
+
+
 def _delivery_chart_image(frame: pd.DataFrame):
     daily = (
         frame.groupby("date", dropna=False)[["ad_impressions", "ad_clicks"]]
@@ -635,6 +841,52 @@ def _fig_to_buffer(fig):
     return buffer
 
 
+def _prepare_email_frame(frame: pd.DataFrame | None) -> pd.DataFrame:
+    if frame is None or frame.empty:
+        return pd.DataFrame(
+            columns=[
+                "report_type",
+                "placement_date",
+                "placement_date_label",
+                "ad_type",
+                "delivered",
+                "opened",
+                "clicks",
+                "open_rate",
+                "click_rate",
+            ]
+        )
+    prepared = frame.copy()
+    for column in ["delivered", "opened", "clicks", "open_rate", "click_rate"]:
+        if column not in prepared.columns:
+            prepared[column] = 0
+        prepared[column] = pd.to_numeric(prepared[column], errors="coerce").fillna(0)
+    prepared["placement_date"] = pd.to_datetime(prepared.get("placement_date", ""), errors="coerce")
+    prepared["placement_date_label"] = prepared["placement_date"].dt.strftime("%Y-%m-%d").fillna("")
+    if "placement_ad_type" not in prepared.columns:
+        prepared["placement_ad_type"] = ""
+    prepared["ad_type"] = prepared["placement_ad_type"].fillna("").astype(str)
+    if "report_type" not in prepared.columns:
+        prepared["report_type"] = "Email"
+    prepared.loc[prepared["ad_type"].str.strip() == "", "ad_type"] = prepared["report_type"].fillna("Email").astype(str)
+    return prepared
+
+
+def _email_totals(frame: pd.DataFrame) -> list[tuple[str, str, str]]:
+    delivered = float(frame["delivered"].sum()) if not frame.empty else 0
+    opened = float(frame["opened"].sum()) if not frame.empty else 0
+    clicks = float(frame["clicks"].sum()) if not frame.empty else 0
+    open_rate = opened / delivered if delivered else 0
+    click_rate = clicks / delivered if delivered else 0
+    return [
+        ("kpi_email_delivered", "Emails delivered", f"{int(delivered):,}"),
+        ("kpi_email_opened", "Emails opened", f"{int(opened):,}"),
+        ("kpi_email_open_rate", "Open rate", f"{open_rate:.2%}"),
+        ("kpi_email_clicks", "Clicks", f"{int(clicks):,}"),
+        ("kpi_email_click_rate", "Click rate", f"{click_rate:.2%}"),
+    ]
+
+
 def _prepare_frame(frame: pd.DataFrame) -> pd.DataFrame:
     prepared = frame.copy()
     if prepared.empty:
@@ -682,18 +934,17 @@ def _totals(frame: pd.DataFrame) -> list[tuple[str, str]]:
 
 def _elements_from_sections(sections: set[str]) -> list[str]:
     elements: list[str] = []
-    if "kpis" in sections:
+    if "kpis" in sections or "website_ads" in sections or "Website Ads" in sections:
         elements.extend([
             "kpi_impressions",
             "kpi_clicks",
             "kpi_ctr",
             "kpi_campaigns",
             "kpi_creatives",
-            "kpi_webinar_registrations",
         ])
-    if "webinars" in sections:
+    if "webinars" in sections or "Webinars" in sections:
         elements.extend(["kpi_webinar_registrations", "table_webinars"])
-    if "visualizations" in sections:
+    if "visualizations" in sections or "website_ads" in sections or "Website Ads" in sections:
         elements.extend([
             "chart_daily_delivery",
             "chart_daily_ctr",
@@ -701,6 +952,20 @@ def _elements_from_sections(sections: set[str]) -> list[str]:
             "chart_campaign_ctr",
             "chart_creative_performance",
             "chart_creative_ctr",
+        ])
+    if "hubspot_email" in sections or "HubSpot Email" in sections:
+        elements.extend([
+            "kpi_email_delivered",
+            "kpi_email_opened",
+            "kpi_email_open_rate",
+            "kpi_email_clicks",
+            "kpi_email_click_rate",
+            "chart_email_ad_type",
+            "chart_email_rates_ad_type",
+            "chart_email_time",
+            "chart_email_rates_time",
+            "manual_enewsletter",
+            "manual_custom_email",
         ])
     if "detail" in sections:
         elements.append("table_campaign_detail")
