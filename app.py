@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+import base64
 from pathlib import Path
 from typing import Any
 
@@ -123,6 +124,18 @@ st.markdown(
     h1, h2, h3 {
         letter-spacing: 0;
         color: var(--sme-navy);
+    }
+    .brand-logo {
+        padding-top: 0.35rem;
+        min-height: 72px;
+        overflow: visible;
+    }
+    .brand-logo img {
+        width: 170px;
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+        display: block;
     }
     .report-kicker {
         color: var(--sme-charcoal);
@@ -1151,7 +1164,11 @@ def render_source_status() -> None:
 header_logo, header_text = st.columns([1, 5], vertical_alignment="center")
 with header_logo:
     if LOGO_PATH.exists():
-        st.image(str(LOGO_PATH), width=160)
+        logo_data = base64.b64encode(LOGO_PATH.read_bytes()).decode("ascii")
+        st.markdown(
+            f'<div class="brand-logo"><img src="data:image/png;base64,{logo_data}" alt="SME logo"></div>',
+            unsafe_allow_html=True,
+        )
 with header_text:
     st.title("Advertiser Dashboard Automation")
     st.markdown(
