@@ -71,9 +71,11 @@ ad_manager:
   refresh_token: YOUR_REFRESH_TOKEN
 ```
 
+### Regenerate a Google Ad Manager refresh token
+
 If the Google Ad Manager OAuth refresh token expires or is revoked, generate a
-new one from the OAuth client file and replace only the `refresh_token` value in
-`config/googleads.yaml`:
+new one from the OAuth client file. Use the `admanager` scope, not the older
+`dfp` scope:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
@@ -81,8 +83,13 @@ python -c "from google_auth_oauthlib.flow import InstalledAppFlow; flow = Instal
 ```
 
 Sign in with a Google account that has access to the configured Google Ad
-Manager network. Do not replace the `client_id` or `client_secret` unless the
-OAuth client itself changed.
+Manager network. Copy the printed token and replace only the `refresh_token`
+value in `config/googleads.yaml`. Do not replace the `client_id` or
+`client_secret` unless the OAuth client itself changed.
+
+If the command prints `None` or Google keeps reusing the old grant, remove the
+app from the Google account's third-party connections page, then run the command
+again.
 
 For service accounts, the service-account email also needs user/API access in the Google Ad Manager network.
 
