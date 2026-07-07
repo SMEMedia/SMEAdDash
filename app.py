@@ -1440,6 +1440,15 @@ with header_text:
         '<div class="report-kicker">Client-facing campaign performance powered by Google Ad Manager</div>',
         unsafe_allow_html=True,
     )
+    st.markdown(
+        """
+        This SME internal application connects to authorized business reporting
+        systems to prepare advertiser campaign performance dashboards and PDF
+        reports. It uses Google Ad Manager data to summarize campaign delivery,
+        creative performance, impressions, clicks, and click-through rates for
+        SME advertiser reporting workflows.
+        """
+    )
 
 with st.sidebar:
     st.markdown("[Dashboard](?page=dashboard)")
