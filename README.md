@@ -93,6 +93,22 @@ again.
 
 For service accounts, the service-account email also needs user/API access in the Google Ad Manager network.
 
+For Streamlit Cloud, do not use a local Windows path in `config/googleads.yaml`.
+Add these secrets in the Streamlit app settings instead:
+
+```toml
+GAM_NETWORK_CODE = "YOUR_GAM_NETWORK_CODE"
+GAM_APPLICATION_NAME = "Advertiser Dashboard Automation"
+GAM_SERVICE_ACCOUNT_JSON = """
+PASTE_THE_FULL_SERVICE_ACCOUNT_JSON_FILE_CONTENTS_HERE
+"""
+```
+
+When `config/googleads.yaml` is not present, the app builds the Google Ad
+Manager config from these environment values. Locally, `config/googleads.yaml`
+takes precedence, so you can keep using `path_to_private_key_file` on your
+machine.
+
 This writes GAM advertisers into the local advertiser config with:
 
 - `advertiser_id`

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 from dataclasses import dataclass
@@ -371,21 +372,64 @@ def googleads_yaml_from_env() -> str:
     client_id = os.getenv("GAM_CLIENT_ID", "")
     client_secret = os.getenv("GAM_CLIENT_SECRET", "")
     refresh_token = os.getenv("GAM_REFRESH_TOKEN", "")
+    service_account_key_file = os.getenv("GAM_SERVICE_ACCOUNT_KEY_FILE", "")
+    service_account_json = os.getenv("GAM_SERVICE_ACCOUNT_JSON", "")
     application_name = os.getenv("GAM_APPLICATION_NAME", "Advertiser Dashboard Automation")
 
-    if not all([network_code, client_id, client_secret, refresh_token]):
-        return ""
+    if network_code and service_account_key_file:
+        return "\n".join(
+            [
+                "ad_manager:",
+                f"  application_name: {application_name}",
+                f"  network_code: {network_code}",
+                f"  path_to_private_key_file: {service_account_key_file}",
+            ]
+        )
 
-    return "\n".join(
-        [
-            "ad_manager:",
-            f"  application_name: {application_name}",
-            f"  network_code: {network_code}",
-            f"  client_id: {client_id}",
-            f"  client_secret: {client_secret}",
-            f"  refresh_token: {refresh_token}",
-        ]
-    )
+    if network_code and service_account_json:
+        key_file = _write_service_account_json(service_account_json)
+        return "\n".join(
+            [
+                "ad_manager:",
+                f"  application_name: {application_name}",
+                f"  network_code: {network_code}",
+                f"  path_to_private_key_file: {key_file}",
+            ]
+        )
+
+    if all([network_code, client_id, client_secret, refresh_token]):
+        return "\n".join(
+            [
+                "ad_manager:",
+                f"  application_name: {application_name}",
+                f"  network_code: {network_code}",
+                f"  client_id: {client_id}",
+                f"  client_secret: {client_secret}",
+                f"  refresh_token: {refresh_token}",
+            ]
+        )
+
+    return ""
+
+
+def _write_service_account_json(service_account_json: str) -> str:
+    try:
+        parsed = json.loads(service_account_json)
+    except json.JSONDecodeError as exc:
+        raise GAMConfigError("GAM_SERVICE_ACCOUNT_JSON must be valid service-account JSON.") from exc
+
+    if not isinstance(parsed, dict) or parsed.get("type") != "service_account":
+        raise GAMConfigError("GAM_SERVICE_ACCOUNT_JSON must contain a Google service-account key.")
+
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".json",
+        prefix="gam-service-account-",
+        delete=False,
+        encoding="utf-8",
+    ) as key_file:
+        json.dump(parsed, key_file)
+        return key_file.name
 
 
 def _read_simple_ad_manager_yaml(config_file: Path) -> dict[str, str]:
