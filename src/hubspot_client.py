@@ -19,6 +19,7 @@ class HubSpotConfigError(RuntimeError):
 
 DEFAULT_BASE_URL = "https://api.hubapi.com"
 MARKETING_EMAILS_PATH = "/marketing/emails/2026-03"
+EMAIL_EVENTS_PATH = "/email/public/v1/events"
 DEFAULT_NEWSLETTER_PLACEMENTS = ROOT_DIR / "data" / "newsletter_placements.csv"
 DEFAULT_NEWSLETTER_EXPORT = ROOT_DIR / "eNewsletter Ad Metrics.csv"
 DEFAULT_CUSTOM_EMAIL_PLACEMENTS = ROOT_DIR / "data" / "custom_email_placements.csv"
@@ -72,6 +73,13 @@ class HubSpotMarketingEmailClient:
 
     def email_detail(self, email_id: str) -> dict[str, Any]:
         return self._get_json(f"{MARKETING_EMAILS_PATH}/{email_id}", params={"includeStats": "true"})
+
+    def email_event_totals(self, email: dict[str, Any]) -> dict[str, int]:
+        totals = {"opened": 0, "clicks": 0}
+        for campaign_id in email_campaign_ids(email):
+            totals["opened"] += self._count_total_events(campaign_id, "OPEN")
+            totals["clicks"] += self._count_total_events(campaign_id, "CLICK")
+        return totals
 
     def newsletter_ads(
         self,
@@ -172,6 +180,17 @@ class HubSpotMarketingEmailClient:
         detail = self.email_detail(_email_id(email))
         email_detail = detail or email
         match = normalize_email_detail(email_detail)
+        event_totals = self.email_event_totals(email_detail)
+        if email_campaign_ids(email_detail):
+            match = HubSpotEmailMatch(
+                **{
+                    **match.__dict__,
+                    "opened": event_totals["opened"],
+                    "clicks": event_totals["clicks"],
+                    "open_rate": _safe_rate(event_totals["opened"], match.delivered),
+                    "click_rate": _safe_rate(event_totals["clicks"], match.delivered),
+                }
+            )
         email_date = _email_date(email_detail)
         placement_date = _placement_date_text(placement) or (email_date.isoformat() if email_date else "")
         delivered = _number_or_default(placement.get("placement_delivered"), match.delivered)
@@ -208,6 +227,24 @@ class HubSpotMarketingEmailClient:
             "open_rate": open_rate,
             "click_rate": click_rate,
         }
+
+    def _count_total_events(self, campaign_id: str, event_type: str) -> int:
+        params: dict[str, Any] = {
+            "limit": 1000,
+            "campaignId": campaign_id,
+            "eventType": event_type,
+        }
+        total = 0
+
+        while True:
+            payload = self._get_json(EMAIL_EVENTS_PATH, params=params)
+            for event in payload.get("events", []):
+                if event.get("filteredEvent") is False:
+                    total += 1
+
+            if not payload.get("hasMore"):
+                return total
+            params["offset"] = payload.get("offset")
 
     def _get_json(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         url = f"{self.base_url}{path}"
@@ -533,6 +570,15 @@ def _safe_rate(numerator: int, denominator: int) -> float:
 
 def _email_id(email: dict[str, Any]) -> str:
     return str(email.get("id") or email.get("emailId") or email.get("hs_email_id") or "")
+
+
+def email_campaign_ids(email: dict[str, Any]) -> list[str]:
+    campaign_ids = []
+    primary_id = email.get("primaryEmailCampaignId")
+    if primary_id:
+        campaign_ids.append(str(primary_id))
+    campaign_ids.extend(str(item) for item in email.get("allEmailCampaignIds", []) if item)
+    return list(dict.fromkeys(campaign_ids))
 
 
 def _email_name(email: dict[str, Any]) -> str:
