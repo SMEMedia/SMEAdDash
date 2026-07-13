@@ -179,9 +179,10 @@ class HubSpotMarketingEmailClient:
     ) -> dict[str, Any]:
         detail = self.email_detail(_email_id(email))
         email_detail = detail or email
+        email_for_events = {**email, **email_detail}
         match = normalize_email_detail(email_detail)
-        event_totals = self.email_event_totals(email_detail)
-        if email_campaign_ids(email_detail):
+        event_totals = self.email_event_totals(email_for_events)
+        if email_campaign_ids(email_for_events):
             match = HubSpotEmailMatch(
                 **{
                     **match.__dict__,
@@ -193,12 +194,10 @@ class HubSpotMarketingEmailClient:
             )
         email_date = _email_date(email_detail)
         placement_date = _placement_date_text(placement) or (email_date.isoformat() if email_date else "")
-        delivered = _number_or_default(placement.get("placement_delivered"), match.delivered)
-        opened = _number_or_default(placement.get("placement_opened"), match.opened)
-        clicks = _number_or_default(
-            placement.get("placement_clicks") or placement.get("clicks"),
-            match.clicks,
-        )
+        delivered = match.delivered
+        opened = match.opened
+        placement_clicks = str(placement.get("placement_clicks", "") or placement.get("clicks", "") or "").strip()
+        clicks = _number_or_default(placement_clicks, match.clicks)
         open_rate = _safe_rate(opened, delivered)
         click_rate = _safe_rate(clicks, delivered)
         advertiser_id = str(placement.get("advertiser_id", "") or advertiser.get("advertiser_id", "") or "")
@@ -216,7 +215,7 @@ class HubSpotMarketingEmailClient:
             "placement_opened": str(placement.get("placement_opened", "") or ""),
             "match_type": match_type,
             "match_status": "Matched",
-            "metric_source": _metric_source(placement),
+            "metric_source": _matched_metric_source(placement),
             "hubspot_delivered": match.delivered,
             "hubspot_opened": match.opened,
             "hubspot_clicks": match.clicks,
@@ -522,6 +521,13 @@ def _metric_source(placement: dict[str, Any]) -> str:
     return "; ".join(sources)
 
 
+def _matched_metric_source(placement: dict[str, Any]) -> str:
+    click_source = "spreadsheet placement" if str(
+        placement.get("placement_clicks", "") or placement.get("clicks", "") or ""
+    ).strip() else "hubspot total events"
+    return f"delivered:hubspot; opened:hubspot total events; clicks:{click_source}"
+
+
 def _first_number(value: Any, keys: list[str]) -> int:
     found = _first_value(value, keys)
     try:
@@ -574,10 +580,22 @@ def _email_id(email: dict[str, Any]) -> str:
 
 def email_campaign_ids(email: dict[str, Any]) -> list[str]:
     campaign_ids = []
-    primary_id = email.get("primaryEmailCampaignId")
-    if primary_id:
-        campaign_ids.append(str(primary_id))
-    campaign_ids.extend(str(item) for item in email.get("allEmailCampaignIds", []) if item)
+    for key in [
+        "primaryEmailCampaignId",
+        "emailCampaignId",
+        "campaignId",
+        "campaign_id",
+        "campaign",
+    ]:
+        value = email.get(key)
+        if isinstance(value, dict):
+            value = value.get("id") or value.get("campaignId")
+        if value:
+            campaign_ids.append(str(value))
+    for key in ["allEmailCampaignIds", "emailCampaignIds", "campaignIds"]:
+        value = email.get(key)
+        if isinstance(value, list):
+            campaign_ids.extend(str(item) for item in value if item)
     return list(dict.fromkeys(campaign_ids))
 
 

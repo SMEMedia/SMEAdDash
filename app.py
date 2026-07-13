@@ -1055,6 +1055,7 @@ def prepare_email_frame(*frames: pd.DataFrame) -> pd.DataFrame:
     if not available:
         return pd.DataFrame()
     prepared = pd.concat(available, ignore_index=True)
+    prepared = normalize_hubspot_reporting_metrics(prepared)
     for column in ["delivered", "opened", "clicks", "open_rate", "click_rate"]:
         if column not in prepared.columns:
             prepared[column] = 0
@@ -1068,6 +1069,42 @@ def prepare_email_frame(*frames: pd.DataFrame) -> pd.DataFrame:
     prepared["ad_type"] = prepared["placement_ad_type"].fillna("").astype(str)
     prepared.loc[prepared["ad_type"].str.strip() == "", "ad_type"] = prepared["report_type"].fillna("Email").astype(str)
     return prepared
+
+
+def normalize_hubspot_reporting_metrics(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty:
+        return frame
+
+    normalized = frame.copy()
+    for column in ["delivered", "opened", "clicks", "hubspot_delivered", "hubspot_opened", "hubspot_clicks"]:
+        if column in normalized.columns:
+            normalized[column] = pd.to_numeric(normalized[column], errors="coerce")
+
+    if "hubspot_delivered" in normalized.columns:
+        hubspot_delivered = normalized["hubspot_delivered"].fillna(0)
+        normalized.loc[hubspot_delivered > 0, "delivered"] = hubspot_delivered[hubspot_delivered > 0]
+
+    if "hubspot_opened" in normalized.columns:
+        hubspot_opened = normalized["hubspot_opened"].fillna(0)
+        normalized.loc[hubspot_opened > 0, "opened"] = hubspot_opened[hubspot_opened > 0]
+
+    if "hubspot_clicks" in normalized.columns:
+        hubspot_clicks = normalized["hubspot_clicks"].fillna(0)
+        normalized.loc[hubspot_clicks > 0, "clicks"] = hubspot_clicks[hubspot_clicks > 0]
+
+    if "placement_clicks" in normalized.columns:
+        placement_clicks = pd.to_numeric(normalized["placement_clicks"], errors="coerce")
+        normalized.loc[placement_clicks.notna(), "clicks"] = placement_clicks[placement_clicks.notna()]
+
+    for column in ["delivered", "opened", "clicks"]:
+        if column not in normalized.columns:
+            normalized[column] = 0
+        normalized[column] = pd.to_numeric(normalized[column], errors="coerce").fillna(0)
+
+    normalized["open_rate"] = normalized["opened"] / normalized["delivered"].replace(0, pd.NA)
+    normalized["click_rate"] = normalized["clicks"] / normalized["delivered"].replace(0, pd.NA)
+    normalized[["open_rate", "click_rate"]] = normalized[["open_rate", "click_rate"]].fillna(0)
+    return normalized
 
 
 def filter_email_frame_for_advertiser(frame: pd.DataFrame, advertiser: dict[str, Any]) -> pd.DataFrame:
@@ -1536,6 +1573,8 @@ else:
 gam_ads = prepare_gam_frame(report.gam_ad_performance)
 hubspot_enewsletter = filter_email_frame_for_advertiser(report.hubspot_enewsletter_performance, selected)
 hubspot_custom_email = filter_email_frame_for_advertiser(report.hubspot_custom_email_performance, selected)
+hubspot_enewsletter = normalize_hubspot_reporting_metrics(hubspot_enewsletter)
+hubspot_custom_email = normalize_hubspot_reporting_metrics(hubspot_custom_email)
 webinar_frame = _empty_webinar_frame()
 webinar_status = ""
 if use_webinar_api:
