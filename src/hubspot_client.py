@@ -590,13 +590,17 @@ def email_campaign_ids(email: dict[str, Any]) -> list[str]:
         value = email.get(key)
         if isinstance(value, dict):
             value = value.get("id") or value.get("campaignId")
-        if value:
+        if _is_numeric_identifier(value):
             campaign_ids.append(str(value))
     for key in ["allEmailCampaignIds", "emailCampaignIds", "campaignIds"]:
         value = email.get(key)
         if isinstance(value, list):
-            campaign_ids.extend(str(item) for item in value if item)
+            campaign_ids.extend(str(item) for item in value if _is_numeric_identifier(item))
     return list(dict.fromkeys(campaign_ids))
+
+
+def _is_numeric_identifier(value: Any) -> bool:
+    return bool(str(value or "").strip().isdigit())
 
 
 def _email_name(email: dict[str, Any]) -> str:
