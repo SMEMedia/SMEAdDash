@@ -22,7 +22,6 @@ from src.master_metrics import (
 )
 from src.pdf_report import build_pdf_report
 from src.reporting import ReportRequest, build_advertiser_report
-from src.webinar_client import WebinarNetClient, WebinarNetConfigError, _empty_webinar_frame
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -39,9 +38,6 @@ SME_COLORS = {
     "red": "#CF323B",
     "pale_blue": "#BCD9E9",
 }
-WEBINAR_API_CACHE_VERSION = 3
-WEBINAR_LISTING_CACHE_VERSION = 2
-
 REPORT_ELEMENTS = {
     "kpi_impressions": {"label": "KPI: Ad impressions", "section": "Website Ads", "type": "kpi"},
     "kpi_clicks": {"label": "KPI: Ad clicks", "section": "Website Ads", "type": "kpi"},
@@ -884,34 +880,6 @@ def lead_gen_detail_table(lead_gen_frame: pd.DataFrame) -> pd.DataFrame:
     ]
 
 
-def match_webinars_from_listing(
-    webinar_frame: pd.DataFrame,
-    listing_frame: pd.DataFrame,
-    advertiser_name: str,
-) -> pd.DataFrame:
-    if webinar_frame.empty or listing_frame.empty:
-        return webinar_frame.iloc[0:0].copy()
-
-    sponsored = listing_frame[
-        listing_frame["listing_sponsor"].fillna("").apply(lambda value: sponsor_matches(value, advertiser_name))
-    ].copy()
-    if sponsored.empty:
-        return webinar_frame.iloc[0:0].copy()
-
-    sponsored["title_key"] = sponsored["listing_title"].map(normalize_title)
-    matched_titles = set(sponsored["title_key"].dropna())
-
-    matched = webinar_frame.copy()
-    matched["title_key"] = matched["webinar_title"].map(normalize_title)
-    matched = matched[matched["title_key"].isin(matched_titles)].copy()
-    if matched.empty:
-        return matched
-
-    sponsor_lookup = sponsored.set_index("title_key")["listing_sponsor"].to_dict()
-    matched["webinar_sponsor"] = matched["title_key"].map(sponsor_lookup).fillna(matched["webinar_sponsor"])
-    return matched.drop(columns=["title_key"])
-
-
 def prepare_gam_frame(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return frame
@@ -1575,7 +1543,18 @@ hubspot_enewsletter = filter_email_frame_for_advertiser(report.hubspot_enewslett
 hubspot_custom_email = filter_email_frame_for_advertiser(report.hubspot_custom_email_performance, selected)
 hubspot_enewsletter = normalize_hubspot_reporting_metrics(hubspot_enewsletter)
 hubspot_custom_email = normalize_hubspot_reporting_metrics(hubspot_custom_email)
-webinar_frame = _empty_webinar_frame()
+webinar_frame = pd.DataFrame(
+    columns=[
+        "webinar_id",
+        "webinar_title",
+        "webinar_sponsor",
+        "webinar_subheading",
+        "webinar_registrant_companies",
+        "webinar_match_text",
+        "registrations",
+        "reports_url",
+    ]
+)
 webinar_status = ""
 if use_webinar_api:
     try:

@@ -1,7 +1,7 @@
 categories:
   webinars:
     label: Webinars
-    source: Webinar.net
+    source: Master Digital Metrics File
     status: live
     metrics:
       - registrations
@@ -18,7 +18,7 @@ categories:
       - recent_newsletter_url
   website_ads:
     label: Website Ads
-    source: GAM and GA4
+    source: Google Ad Manager
     status: live
     metrics:
       - ad_impressions
@@ -51,7 +51,7 @@ categories:
       - email_screenshot
   lead_gen:
     label: Lead Gen
-    source: Anteriad
+    source: Master Digital Metrics File
     status: live
     metrics:
       - leads_received

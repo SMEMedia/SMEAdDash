@@ -1,209 +1,245 @@
-# Advertiser Dashboard Automation
+# Advertiser Dashboard
 
-This project is a starter framework for client-facing advertiser dashboards.
-It supports two reporting paths:
+This dashboard creates advertiser performance reports for SME. It combines campaign data from Google Ad Manager, HubSpot email activity, and SME's shared Google Sheets into one Streamlit app. The app can be used to review campaign performance on screen and download a client-ready PDF report.
 
-1. Streamlit app: choose one advertiser and generate a report view.
-2. Power BI data layer: export advertiser-level tables to CSV or Excel for use in a filtered Power BI template.
+## What The Dashboard Does
 
-The first implemented connector is GA4. Other source systems are represented in the shared schema so they can be added without changing the dashboard/reporting flow.
+The dashboard lets a user:
 
-## Setup
+- Choose an advertiser.
+- Choose a report date range.
+- Pull available campaign data from connected sources.
+- Add manual notes or manual metrics when a source is not automated.
+- Choose which sections should appear in the PDF.
+- Download a PDF report.
+
+The dashboard is designed for campaign reporting, not for editing source-system data. The only source list it edits directly is the advertiser source Google Sheet.
+
+## Connected Data Sources
+
+| Report section | Where the data comes from | Status |
+| --- | --- | --- |
+| Website Ads | Google Ad Manager | Live |
+| eNewsletter Ads | HubSpot + Master Digital Metrics File | Live |
+| Custom Email | HubSpot | Live |
+| Webinars | Master Digital Metrics File | Live |
+| Lead Gen | Master Digital Metrics File | Live |
+| Retargeting | Manual entry for now | Planned |
+
+The dashboard also contains older helper code for GA4 and historical Webinar.net workflows. Those are not the primary nontechnical workflow today.
+
+## The Two Google Sheets
+
+The dashboard expects access to two Google Sheets:
+
+1. **Advertiser Source**
+   - Tab: `advertisers`
+   - Purpose: the advertiser dropdown list.
+   - The dashboard can refresh this sheet by adding advertisers found in Google Ad Manager and the master metrics sheet.
+
+2. **Master Digital Metrics File**
+   - Tabs used by the dashboard:
+     - `2026 eNewsletter Ads`
+     - `2026 Web Ads`
+     - `2026 Webinars`
+     - `2026 Custom Emails`
+     - `2026 Lead Gen`
+   - Purpose: placement and manually maintained performance data.
+
+Both sheets must be shared with the Google service account used by the app.
+
+## How To Run A Report
+
+1. Open the Streamlit app.
+2. Select an advertiser from the sidebar.
+3. Choose the start date and end date.
+4. Leave the connected data pulls selected unless there is a reason to skip one.
+5. Use **Run report**.
+6. Review the dashboard sections.
+7. Use the PDF checkboxes to include or remove report sections.
+8. Download the PDF report.
+
+If an advertiser is missing from the dropdown, use **Search advertiser not shown in list** and type the company name. This searches the selected date range across the connected data sources.
+
+## Refreshing The Advertiser List
+
+Use **Refresh advertiser sheet** in the sidebar when new advertisers should be added to the dropdown.
+
+That button updates the `Advertiser Source` Google Sheet by combining:
+
+- existing advertisers already in the advertiser sheet,
+- advertisers from Google Ad Manager,
+- advertisers found in all supported tabs of the Master Digital Metrics File.
+
+This is the normal way to keep the dropdown current.
+
+## Manual Entry
+
+Manual entry is available in the sidebar for:
+
+- Website Ads
+- Webinars
+- eNewsletter Ads
+- Retargeting
+- Custom Email
+- Lead Gen
+
+Manual entry is useful when a report section is not automated yet, a data source is unavailable, or a one-off correction needs to appear in the PDF.
+
+## Accounts And Credentials Needed
+
+These are the account connections that must be transferred to the new owner or replaced with team-owned credentials.
+
+### Google Sheets
+
+Used for:
+
+- reading the advertiser source sheet,
+- writing refreshed advertisers back to the advertiser source sheet,
+- reading the master metrics sheet.
+
+Credential options:
+
+- Streamlit Cloud secret named `gcp_service_account` or `google_service_account`, or
+- environment variable `GOOGLE_SERVICE_ACCOUNT_JSON`, or
+- local service account JSON file in `config/`.
+
+The service account needs access to both Google Sheets.
+
+### HubSpot
+
+Used for:
+
+- finding eNewsletter marketing emails,
+- finding custom emails,
+- pulling delivered/opened/click metrics,
+- pulling creative and web-version URLs.
+
+Required setting:
+
+```text
+HUBSPOT_ACCESS_TOKEN
+```
+
+The HubSpot token should come from an SME-owned private app or service key, not from a departing employee's personal setup.
+
+### Google Ad Manager
+
+Used for:
+
+- advertiser list refresh,
+- website ad impressions,
+- website ad clicks,
+- CTR,
+- campaign and creative details.
+
+Credential options:
+
+- `config/googleads.yaml` locally, or
+- Streamlit Cloud secrets/environment values:
+  - `GAM_NETWORK_CODE`
+  - `GAM_APPLICATION_NAME`
+  - `GAM_SERVICE_ACCOUNT_JSON`
+  - or OAuth values: `GAM_CLIENT_ID`, `GAM_CLIENT_SECRET`, `GAM_REFRESH_TOKEN`
+
+For handoff, an SME-owned service account is the cleanest option.
+
+## Important Files
+
+| File or folder | Purpose |
+| --- | --- |
+| `app.py` | Main Streamlit dashboard. |
+| `src/config.py` | Loads environment settings, Google Sheets data, and report source labels. |
+| `src/gam_client.py` | Connects to Google Ad Manager. |
+| `src/hubspot_client.py` | Connects to HubSpot marketing email data. |
+| `src/master_metrics.py` | Reads the Master Digital Metrics File tabs. |
+| `src/pdf_report.py` | Builds the PDF report. |
+| `src/reporting.py` | Pulls together GAM, HubSpot, and sheet data for a selected advertiser. |
+| `assets/sme_logo.png` | Logo used in the dashboard and PDF. |
+| `config/report_sources.yml` | Labels shown in the Connected Sources table. |
+| `config/googleads.yaml.example` | Example Google Ad Manager configuration. |
+| `.env.example` | Template for local environment settings. Do not put real secrets in it. |
+
+## Files That Should Stay Private
+
+Do not commit these files to GitHub:
+
+- `.env`
+- `.streamlit/secrets.toml`
+- `config/googleads.yaml`
+- `config/*.json` service account files
+- downloaded exports or temporary report files
+
+The repository's `.gitignore` is set up to keep these private.
+
+## Local Setup For A Technical Helper
+
+Most users should use the deployed Streamlit app. If a technical helper needs to run it locally:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-```
-
-Create a `.env` file from the example:
-
-```powershell
 Copy-Item .env.example .env
 ```
 
-The default GA4 setup reuses the OAuth files from the sibling `webscraping` project:
-
-```text
-GA4_PROPERTY_ID=123456789
-GA4_CLIENT_SECRET_FILE=..\webscraping\config\client_secret.json
-GA4_TOKEN_FILE=..\webscraping\config\token.json
-```
-
-If those values are blank, the app defaults to property `432233519` and the same sibling paths above. You can still use a service account by setting `GOOGLE_APPLICATION_CREDENTIALS`.
-
-## Advertiser Config
-
-Advertisers can come from either:
-
-- Google Ad Manager, using the `sync-gam-advertisers` command.
-- `config/advertisers.csv`, for manual overrides or GA4 matching rules.
-
-To pull advertiser names from Google Ad Manager:
-
-```powershell
-Copy-Item config/googleads.yaml.example config/googleads.yaml
-```
-
-Fill in the GAM `network_code` and service-account key path, then run:
-
-```powershell
-python -m src.cli sync-gam-advertisers --output config/advertisers.csv
-```
-
-`config/googleads.yaml` can use either of these authentication styles:
-
-```yaml
-ad_manager:
-  application_name: Advertiser Dashboard Automation
-  network_code: YOUR_GAM_NETWORK_CODE
-  path_to_private_key_file: C:\real\path\to\gam-service-account.json
-```
-
-or:
-
-```yaml
-ad_manager:
-  application_name: Advertiser Dashboard Automation
-  network_code: YOUR_GAM_NETWORK_CODE
-  client_id: YOUR_CLIENT_ID
-  client_secret: YOUR_CLIENT_SECRET
-  refresh_token: YOUR_REFRESH_TOKEN
-```
-
-### Regenerate a Google Ad Manager refresh token
-
-If the Google Ad Manager OAuth refresh token expires or is revoked, generate a
-new one from the OAuth client file. Use the `admanager` scope, not the older
-`dfp` scope:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -c "from google_auth_oauthlib.flow import InstalledAppFlow; flow = InstalledAppFlow.from_client_secrets_file('config/gam_oauth_client.json', scopes=['https://www.googleapis.com/auth/admanager']); creds = flow.run_local_server(port=0, access_type='offline', prompt='consent'); print(creds.refresh_token)"
-```
-
-Sign in with a Google account that has access to the configured Google Ad
-Manager network. Copy the printed token and replace only the `refresh_token`
-value in `config/googleads.yaml`. Do not replace the `client_id` or
-`client_secret` unless the OAuth client itself changed.
-
-If the command prints `None` or Google keeps reusing the old grant, remove the
-app from the Google account's third-party connections page, then run the command
-again.
-
-For service accounts, the service-account email also needs user/API access in the Google Ad Manager network.
-
-For Streamlit Cloud, do not use a local Windows path in `config/googleads.yaml`.
-Add these secrets in the Streamlit app settings instead:
-
-```toml
-GAM_NETWORK_CODE = "YOUR_GAM_NETWORK_CODE"
-GAM_APPLICATION_NAME = "Advertiser Dashboard Automation"
-GAM_SERVICE_ACCOUNT_JSON = """
-PASTE_THE_FULL_SERVICE_ACCOUNT_JSON_FILE_CONTENTS_HERE
-"""
-```
-
-When `config/googleads.yaml` is not present, the app builds the Google Ad
-Manager config from these environment values. Locally, `config/googleads.yaml`
-takes precedence, so you can keep using `path_to_private_key_file` on your
-machine.
-
-This writes GAM advertisers into the local advertiser config with:
-
-- `advertiser_id`
-- `advertiser_name`
-- `gam_advertiser_id`
-- `gam_advertiser_name`
-- `gam_company_type`
-- `gam_credit_status`
-
-The Streamlit app can also read advertisers live from GAM from the sidebar.
-
-Each row can include:
-
-- `advertiser_id`: stable internal ID.
-- `advertiser_name`: display name.
-- `utm_source`, `utm_medium`, `utm_campaign`: optional filters used to isolate advertiser traffic in GA4.
-- `landing_page_contains`: optional landing page filter.
-- `notes`: free-form context.
-
-Use whichever identifiers match how advertiser campaigns are tagged today. The GA4 connector builds a combined filter from the populated fields.
-
-## HubSpot Email Performance
-
-Set your private app token in `.env`:
-
-```text
-HUBSPOT_ACCESS_TOKEN=pat-na1-...
-```
-
-The Streamlit app can pull Marketing Emails API performance for:
-
-- eNewsletter ads: matches placement dates for the selected advertiser to marketing email names like `MW m/dd/yy`. The default file is `data/newsletter_placements.csv`, falling back to `eNewsletter Ad Metrics.csv` in the project root. Users can also upload a newer CSV/XLSX file from the sidebar for a report run.
-- Custom emails: matches email titles containing `[Advertiser Name] Custom Email`, optionally enriched with rows in `data/custom_email_placements.csv`.
-
-Optional placement files can include `advertiser_id` or `advertiser_name`, plus a date column named `placement_date`, `date`, `newsletter_date`, or `send_date`. The eNewsletter export format with `Date`, `Delivered`, `Opened`, `Advertiser`, `Ad Type`, and `Clicks` is also supported; blank date/delivered/opened cells inherit the previous newsletter row.
-
-To add advertiser names from the eNewsletter placement export into `config/advertisers.csv`:
-
-```powershell
-python -m src.cli sync-enewsletter-advertisers --placements "eNewsletter Ad Metrics.csv"
-```
-
-Or include them when syncing webinar sponsors:
-
-```powershell
-python -m src.cli sync-webinar-sponsors --include-enewsletter
-```
-
-To enrich `config/advertisers.csv` from all configured advertiser sources at once:
-
-```powershell
-python -m src.cli enrich-advertisers --placements "eNewsletter Ad Metrics.csv"
-```
-
-This adds or updates `gam`, `webinar`, and `email` columns with `true`/`false` source flags.
-
-## Streamlit App
+Then fill in `.env` with team-owned credentials and run:
 
 ```powershell
 streamlit run app.py
 ```
 
-The app lets you select an advertiser, date range, and output mode. It currently shows GA4 website performance and placeholder sections for the remaining systems.
+## Streamlit Cloud Setup
 
-## Power BI Export
+In Streamlit Cloud, add secrets for the same account connections:
 
-Export all advertisers to CSV files:
+- Google service account JSON for the Google Sheets.
+- HubSpot access token.
+- Google Ad Manager credentials.
 
-```powershell
-python -m src.cli export --format csv --output-dir data/exports
-```
+Keep all real tokens and JSON keys in Streamlit secrets. Do not paste them into files committed to GitHub.
 
-Export all advertisers to one Excel workbook:
+## Common Issues
 
-```powershell
-python -m src.cli export --format xlsx --output-dir data/exports
-```
+### Advertiser is missing from the dropdown
 
-The exported tables are shaped for Power BI filtering by `advertiser_id` and `advertiser_name`.
+Use **Refresh advertiser sheet**. If the advertiser still does not appear, use **Search advertiser not shown in list**.
 
-Current exported tables:
+### HubSpot email section is empty
 
-- `report_metadata`
-- `ga4_website_performance`
-- `gam_ad_performance`
+Check:
 
-`gam_ad_performance` includes ad impressions, ad clicks, and ad CTR by GAM advertiser and date.
+- the HubSpot token is current,
+- the token has marketing email access,
+- the email name contains the expected advertiser/date text,
+- the selected date range includes the email.
 
-## Source Roadmap
+### Website ads are empty
 
-| Category | System | Status |
-| --- | --- | --- |
-| Webinars | Webinar.net | Planned |
-| eNewsletter Ads | HubSpot | Planned |
-| Website Ads | GAM and GA4 | GA4 starter implemented |
-| Retargeting | StackAdapt | Planned |
-| Custom Email | HubSpot | Planned |
-| Lead Gen | Anteriad | Planned |
+Check:
+
+- the advertiser has a Google Ad Manager advertiser ID,
+- the selected date range includes campaign delivery,
+- Google Ad Manager credentials are working.
+
+### Webinars or lead gen are empty
+
+Check:
+
+- the advertiser name in the master sheet matches the name being searched,
+- the selected date range overlaps the row's date range,
+- the relevant master sheet tab has data.
+
+## Handoff Checklist
+
+Before the project owner changes:
+
+- Transfer or recreate the HubSpot private app/service key.
+- Transfer or recreate the Google service account used for Sheets.
+- Share `Advertiser Source` with the new service account.
+- Share `Master Digital Metrics File` with the new service account.
+- Transfer or recreate Google Ad Manager credentials.
+- Update Streamlit Cloud secrets with the new credentials.
+- Confirm the GitHub repo owner/admin access is assigned to the right SME person.
+- Run one test report in Streamlit after credentials are updated.
+

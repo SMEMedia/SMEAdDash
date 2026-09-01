@@ -1,8 +1,12 @@
 .env
+.streamlit/secrets.toml
 .venv/
 __pycache__/
 *.py[cod]
 data/exports/
-config/advertizerdashboard-acfc4bf4500d.json
-config/gam_oauth_client.json
+outputs/
+*.pbix
+SME_Theme*.json
+eNewsletter Ad Metrics.csv
+config/*.json
 config/googleads.yaml
