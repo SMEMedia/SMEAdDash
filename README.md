@@ -94,4 +94,3 @@ If a name still does not appear, use **Search advertiser not shown in list** and
 - Keep source-system, Streamlit, and Google Sheet access assigned to current SME staff.
 - Escalate credential, source-mapping, deployment, and code changes to the assigned technical owner.
 
-*** Delete File: SMEAppDash/README.md
