@@ -1,6 +1,0 @@
-Canvas: 1280x720.
-Brand: SME navy #153254, SME blue #5F8BB3, SME lime #D6D65E, cool gray #E8EDF0, white, charcoal #29333A. HubSpot orange #FF5C35 is used only for HubSpot-specific callouts.
-Typography: Aptos Display for claims; Aptos for body and labels; Aptos Mono for API endpoints/scopes.
-Grammar: open white layouts, navy title bands, lime rules, minimal 4px radius containers, direct labels, thin connectors.
-Footer: source URLs and page number at 11px.
-Banned motifs: decorative gradients, card grids as default, rounded pill labels, fake logos, generic stock imagery.

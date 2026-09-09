@@ -1,7 +1,0 @@
-1. Cover: bold thesis with current-source rail and access decision.
-2. Scope: left narrative plus right end-to-end reporting flow.
-3. HubSpot role: two-column data contract for eNewsletter Ads and Custom Email.
-4. Matching: advertiser-to-email attribution decision tree and required naming/mapping fields.
-5. Implementation: horizontal five-stage technical pipeline with endpoints and outputs.
-6. Permissions: large least-privilege matrix and explicit do-not-request list.
-7. Meeting close: phased timeline, owners, decisions, and acceptance criteria.
