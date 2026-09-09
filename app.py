@@ -73,6 +73,7 @@ REPORT_ELEMENTS = {
     "manual_webinars": {"label": "Manual: Webinars", "section": "Manual data", "type": "table"},
     "manual_enewsletter_entry": {"label": "Manual: eNewsletter ads", "section": "Manual data", "type": "table"},
     "manual_retargeting": {"label": "Manual: Retargeting", "section": "Manual data", "type": "table"},
+    "manual_podcast": {"label": "Manual: Podcast", "section": "Manual data", "type": "table"},
     "manual_custom_email": {"label": "HubSpot: Custom email", "section": "HubSpot Email", "type": "table"},
     "manual_custom_email_entry": {"label": "Manual: Custom email", "section": "Manual data", "type": "table"},
     "manual_lead_gen": {"label": "Manual: Lead gen", "section": "Manual data", "type": "table"},
@@ -523,6 +524,7 @@ def available_report_elements(
         "manual_webinars",
         "manual_enewsletter_entry",
         "manual_retargeting",
+        "manual_podcast",
         "manual_custom_email_entry",
         "manual_lead_gen",
     ]:
@@ -632,6 +634,9 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
             key="manual_retargeting_performance",
         )
 
+        st.markdown("**Podcast**")
+        podcast_downloads_listens = manual_number("Downloads/Listens", "manual_podcast_downloads_listens")
+
         st.markdown("**Custom Email**")
         email_delivered = manual_number("Total delivered", "manual_email_delivered")
         email_opened = manual_number("Total opened", "manual_email_opened")
@@ -692,6 +697,12 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
                 ("Ad CTR", format_percent(retargeting_ctr)),
                 ("Ad creative", retargeting_creative),
                 ("Performance by ad creative", retargeting_performance),
+            ],
+        },
+        "manual_podcast": {
+            "title": "Podcast",
+            "rows": [
+                ("Downloads/Listens", format_integer(podcast_downloads_listens)),
             ],
         },
         "manual_custom_email": {
@@ -1927,6 +1938,7 @@ for manual_element_id in [
     "manual_webinars",
     "manual_enewsletter_entry",
     "manual_retargeting",
+    "manual_podcast",
     "manual_custom_email_entry",
     "manual_lead_gen",
 ]:
