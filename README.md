@@ -30,6 +30,7 @@ This dashboard combines advertiser campaign information from Google Ad Manager, 
 | Lead Gen | Master Digital Metrics File |
 | Retargeting | Manual entry |
 | Podcast | Manual entry |
+| eEdition Impressions | Manual entry |
 
 The dashboard reads the Master Digital Metrics File and can update the advertiser list in the Advertiser Source Sheet. It does not edit campaigns in HubSpot or Google Ad Manager.
 

@@ -235,6 +235,7 @@ def build_pdf_report(
             "manual_enewsletter_entry",
             "manual_retargeting",
             "manual_podcast",
+            "manual_eedition_impressions",
             "manual_custom_email_entry",
             "manual_lead_gen",
         ]

@@ -74,6 +74,7 @@ REPORT_ELEMENTS = {
     "manual_enewsletter_entry": {"label": "Manual: eNewsletter ads", "section": "Manual data", "type": "table"},
     "manual_retargeting": {"label": "Manual: Retargeting", "section": "Manual data", "type": "table"},
     "manual_podcast": {"label": "Manual: Podcast", "section": "Manual data", "type": "table"},
+    "manual_eedition_impressions": {"label": "Manual: eEdition Impressions", "section": "Manual data", "type": "table"},
     "manual_custom_email": {"label": "HubSpot: Custom email", "section": "HubSpot Email", "type": "table"},
     "manual_custom_email_entry": {"label": "Manual: Custom email", "section": "Manual data", "type": "table"},
     "manual_lead_gen": {"label": "Manual: Lead gen", "section": "Manual data", "type": "table"},
@@ -525,6 +526,7 @@ def available_report_elements(
         "manual_enewsletter_entry",
         "manual_retargeting",
         "manual_podcast",
+        "manual_eedition_impressions",
         "manual_custom_email_entry",
         "manual_lead_gen",
     ]:
@@ -637,6 +639,9 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
         st.markdown("**Podcast**")
         podcast_downloads_listens = manual_number("Downloads/Listens", "manual_podcast_downloads_listens")
 
+        st.markdown("**eEdition Impressions**")
+        eedition_impressions = manual_number("Impressions", "manual_eedition_impressions")
+
         st.markdown("**Custom Email**")
         email_delivered = manual_number("Total delivered", "manual_email_delivered")
         email_opened = manual_number("Total opened", "manual_email_opened")
@@ -703,6 +708,12 @@ def collect_manual_data() -> dict[str, dict[str, Any]]:
             "title": "Podcast",
             "rows": [
                 ("Downloads/Listens", format_integer(podcast_downloads_listens)),
+            ],
+        },
+        "manual_eedition_impressions": {
+            "title": "eEdition Impressions",
+            "rows": [
+                ("Impressions", format_integer(eedition_impressions)),
             ],
         },
         "manual_custom_email": {
@@ -1939,6 +1950,7 @@ for manual_element_id in [
     "manual_enewsletter_entry",
     "manual_retargeting",
     "manual_podcast",
+    "manual_eedition_impressions",
     "manual_custom_email_entry",
     "manual_lead_gen",
 ]:
